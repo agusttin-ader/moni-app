@@ -1,10 +1,7 @@
 import { getRedirectResult, onAuthStateChanged } from 'firebase/auth'
 import { useEffect, useState } from 'react'
 import { auth } from '../lib/firebase.js'
-import {
-  consumeRedirectAuthPending,
-  storeRedirectAuthError,
-} from '../lib/auth.js'
+import { storeRedirectAuthError } from '../lib/auth.js'
 
 export function useAuthUser() {
   const [user, setUser] = useState(null)
@@ -18,8 +15,6 @@ export function useAuthUser() {
       }, 0)
       return () => clearTimeout(t)
     }
-
-    const hadRedirectPending = consumeRedirectAuthPending()
 
     // En algunos navegadores móviles el evento de auth puede retrasarse
     // después de redirect/popup. Usamos fallback con auth.currentUser.
@@ -50,13 +45,6 @@ export function useAuthUser() {
         storeRedirectAuthError(e)
       })
       .finally(() => {
-        if (hadRedirectPending && !auth.currentUser) {
-          storeRedirectAuthError({
-            code: 'auth/redirect-without-session',
-            message:
-              'Google no pudo completar la sesión en este navegador móvil. Revisá Cookies/Sitios cruzados y que el authDomain de Firebase esté configurado para tu dominio.',
-          })
-        }
         redirectDone = true
         finishIfReady()
       })

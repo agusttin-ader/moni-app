@@ -12,7 +12,6 @@ import {
 import { auth, firebaseInitError } from './firebase.js'
 
 const REDIRECT_AUTH_ERROR_KEY = 'moni_auth_redirect_error'
-const REDIRECT_AUTH_PENDING_KEY = 'moni_auth_redirect_pending'
 let persistenceReadyPromise = null
 
 function authUnavailableMessage() {
@@ -60,27 +59,6 @@ export function consumeRedirectAuthError() {
   }
 }
 
-export function markRedirectAuthPending() {
-  if (typeof window === 'undefined') return
-  try {
-    window.sessionStorage.setItem(REDIRECT_AUTH_PENDING_KEY, '1')
-  } catch {
-    // No-op
-  }
-}
-
-export function consumeRedirectAuthPending() {
-  if (typeof window === 'undefined') return false
-  try {
-    const hadPending =
-      window.sessionStorage.getItem(REDIRECT_AUTH_PENDING_KEY) === '1'
-    if (hadPending) window.sessionStorage.removeItem(REDIRECT_AUTH_PENDING_KEY)
-    return hadPending
-  } catch {
-    return false
-  }
-}
-
 async function ensureAuthPersistence() {
   if (!auth) return false
   if (persistenceReadyPromise) return persistenceReadyPromise
@@ -112,6 +90,18 @@ export function isIOSStandalone() {
     window.matchMedia?.('(display-mode: standalone)')?.matches ||
     window.navigator.standalone === true
   return Boolean(isiOS && standalone)
+}
+
+function isInAppBrowser() {
+  if (typeof window === 'undefined') return false
+  const ua = window.navigator.userAgent || ''
+  return /FBAN|FBAV|Instagram|Line|Twitter|WhatsApp|wv\)/i.test(ua)
+}
+
+function shouldUseRedirectOnMobile() {
+  if (typeof window === 'undefined') return false
+  const ua = window.navigator.userAgent || ''
+  return /Android|iPhone|iPad|iPod|IEMobile|Opera Mini/i.test(ua)
 }
 
 export async function register(email, password) {
@@ -153,6 +143,14 @@ export async function logout() {
 export async function loginWithGoogle() {
   if (!auth) return { user: null, error: authUnavailableMessage() }
   try {
+    if (isInAppBrowser()) {
+      return {
+        user: null,
+        error:
+          'Google no funciona dentro del navegador de WhatsApp/Instagram. Abrí este link en Safari o Chrome y volvé a intentar.',
+      }
+    }
+
     if (isIOSStandalone()) {
       return {
         user: null,
@@ -163,7 +161,12 @@ export async function loginWithGoogle() {
 
     const provider = new GoogleAuthProvider()
     provider.setCustomParameters({ prompt: 'select_account' })
-    const hasPersistence = await ensureAuthPersistence()
+    await ensureAuthPersistence()
+    if (shouldUseRedirectOnMobile()) {
+      await signInWithRedirect(auth, provider)
+      return { user: null, error: null }
+    }
+
     try {
       const credential = await signInWithPopup(auth, provider)
       return { user: credential.user, error: null }
@@ -172,19 +175,17 @@ export async function loginWithGoogle() {
       if (
         code === 'auth/popup-blocked' ||
         code === 'auth/cancelled-popup-request' ||
-        code === 'auth/popup-closed-by-user' ||
-        code === 'auth/operation-not-supported-in-this-environment'
+        code === 'auth/popup-closed-by-user'
       ) {
-        if (!hasPersistence) {
-          return {
-            user: null,
-            error:
-              'Este navegador móvil bloquea la persistencia de sesión para Google. Probá con email/contraseña o habilitá cookies y abrí de nuevo.',
-          }
-        }
-        markRedirectAuthPending()
         await signInWithRedirect(auth, provider)
         return { user: null, error: null }
+      }
+      if (code === 'auth/operation-not-supported-in-this-environment') {
+        return {
+          user: null,
+          error:
+            'Google no está disponible en este navegador móvil. Probá en Safari/Chrome actualizados o ingresá con email.',
+        }
       }
       throw error
     }
