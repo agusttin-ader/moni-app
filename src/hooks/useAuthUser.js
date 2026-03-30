@@ -16,12 +16,18 @@ export function useAuthUser() {
       return () => clearTimeout(t)
     }
 
-    // No marcamos loading=false hasta que estén:
-    // 1) terminado getRedirectResult y 2) recibido el primer onAuthStateChanged.
+    // En algunos navegadores móviles el evento de auth puede retrasarse
+    // después de redirect/popup. Usamos fallback con auth.currentUser.
     let redirectDone = false
     let firstAuthEvent = false
+    let fallbackTimer = 0
     const finishIfReady = () => {
       if (redirectDone && firstAuthEvent) setLoading(false)
+    }
+    const syncFromCurrentUser = () => {
+      const u = auth.currentUser
+      if (u) setUser(u)
+      if (redirectDone) setLoading(false)
     }
 
     const unsub = onAuthStateChanged(auth, (u) => {
@@ -40,7 +46,21 @@ export function useAuthUser() {
         finishIfReady()
       })
 
-    return () => unsub()
+    // Fallback defensivo para mobile: si no llega evento a tiempo, usamos currentUser.
+    fallbackTimer = window.setTimeout(() => {
+      syncFromCurrentUser()
+    }, 2200)
+
+    const onFocus = () => syncFromCurrentUser()
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onFocus)
+
+    return () => {
+      if (fallbackTimer) window.clearTimeout(fallbackTimer)
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onFocus)
+      unsub()
+    }
   }, [])
 
   return { user, loading }
