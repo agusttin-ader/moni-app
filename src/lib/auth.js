@@ -26,11 +26,20 @@ function mapAuthError(error, fallback) {
 function shouldUseGoogleRedirect() {
   if (typeof window === 'undefined') return false
   const ua = window.navigator.userAgent || ''
-  const isiOS = /iPad|iPhone|iPod/.test(ua)
+  // Android (y casi todo móvil): el popup suele bloquearse o quedar en blanco.
+  const isMobile =
+    /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(
+      ua,
+    ) ||
+    (navigator.maxTouchPoints > 1 &&
+      /Macintosh/.test(ua))
+  if (isMobile) return true
   const isSafari =
     /Safari/i.test(ua) &&
-    !/CriOS|FxiOS|EdgiOS|OPiOS|DuckDuckGo|GSA|YaBrowser/i.test(ua)
-  return isiOS || isSafari
+    !/Chromium|Chrome|Edg|CriOS|FxiOS|OPiOS|DuckDuckGo|GSA|YaBrowser/i.test(
+      ua,
+    )
+  return isSafari
 }
 
 export async function register(email, password) {

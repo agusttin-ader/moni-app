@@ -154,14 +154,14 @@ export function Login() {
             className="moni-btn moni-btn--primary moni-btn--block"
             disabled={busy}
           >
-            Ya tengo cuenta
+            Entrar
           </button>
         </div>
       </form>
 
       <button
         type="button"
-        className="moni-btn moni-btn--secondary moni-btn--with-icon moni-btn--block"
+        className="moni-btn moni-btn--secondary moni-btn--with-icon moni-btn--block moni-login-google"
         onClick={onGoogle}
         disabled={busy}
       >
