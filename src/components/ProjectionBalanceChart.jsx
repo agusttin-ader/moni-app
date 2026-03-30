@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
-import { projectionBalanceBarsModel } from '../lib/calculations.js'
+import {
+  PROJECTION_HORIZON_MONTHS,
+  projectionBalanceBarsModel,
+} from '../lib/calculations.js'
 import { formatMoney } from '../lib/format.js'
 
 export function ProjectionBalanceChart({ state }) {
@@ -31,8 +34,8 @@ export function ProjectionBalanceChart({ state }) {
       <div className="moni-card__head moni-chart-card__head">
         <h3 className="moni-card__title">Saldo proyectado</h3>
         <p className="moni-card__sub">
-          Cuánto te quedaría cada mes con los datos actuales (misma escala entre
-          los tres).
+          Cuánto te quedaría cada mes con los datos actuales (misma escala en los{' '}
+          {PROJECTION_HORIZON_MONTHS} meses).
         </p>
       </div>
 

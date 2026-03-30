@@ -442,8 +442,8 @@
 
 .moni-chart-card__footer {
   margin-top: 0.65rem;
-  padding-top: 0.65rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 0.55rem;
+  border-top: none;
   display: grid;
   gap: 0.12rem;
 }
@@ -1175,7 +1175,7 @@
   justify-content: space-between;
   gap: 1rem;
   padding: 0.38rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: none;
   font-size: 0.84rem;
   color: var(--eth-muted);
 }
@@ -1198,8 +1198,10 @@
 }
 
 .moni-projection-chart__svg-wrap {
-  height: 120px;
-  max-height: min(28vw, 140px);
+  width: 100%;
+  height: auto;
+  aspect-ratio: 100 / 38;
+  max-height: min(22vw, 168px);
   margin-bottom: 0.55rem;
   overflow: hidden;
   border-radius: 10px;
@@ -1256,8 +1258,8 @@
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.35rem;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.2rem;
   text-align: center;
 }
 
@@ -1269,9 +1271,9 @@
 }
 
 .moni-projection-chart__key-label {
-  font-size: 0.62rem;
+  font-size: 0.55rem;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: rgba(220, 220, 235, 0.45);
 }
@@ -1973,6 +1975,7 @@
 .moni-auth-panel {
   display: grid;
   place-items: center;
+  width: 100%;
 }
 
 .moni-login-card {
@@ -1989,17 +1992,31 @@
   backdrop-filter: blur(20px);
 }
 
+.moni-login-card__brand {
+  display: grid;
+  place-items: center;
+  margin-bottom: 0.7rem;
+}
+
+.moni-login-card__logo {
+  width: min(240px, 82%);
+  height: auto;
+  object-fit: contain;
+}
+
 .moni-login-card__title {
   margin: 0;
   font-size: 1.35rem;
   font-weight: 800;
   letter-spacing: -0.02em;
+  text-align: center;
 }
 
 .moni-login-card__hint {
   margin: 0.35rem 0 0.9rem;
   font-size: 0.88rem;
   color: var(--eth-muted);
+  text-align: center;
 }
 
 .moni-login-sep {
@@ -2028,6 +2045,58 @@
   flex-direction: column;
   gap: 0.5rem;
   margin-top: 0.35rem;
+}
+
+.moni-login-register {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.moni-login-register > .moni-form {
+  min-height: 0;
+  overflow: hidden;
+  margin-top: 0;
+}
+
+.moni-login-register.is-open {
+  grid-template-rows: 1fr;
+  margin-top: 0.55rem;
+}
+
+@media (max-width: 899px) {
+  .moni-auth-shell {
+    min-height: 100vh;
+    min-height: 100svh;
+    background:
+      radial-gradient(900px 620px at 15% -10%, rgba(94, 228, 214, 0.22), transparent 60%),
+      radial-gradient(800px 620px at 85% 0%, rgba(139, 92, 246, 0.24), transparent 64%),
+      linear-gradient(170deg, #061016 0%, #0c0e18 42%, #070910 100%);
+  }
+
+  .moni-auth-main {
+    grid-template-columns: 1fr;
+  }
+
+  .moni-auth-hero {
+    display: none;
+  }
+
+  .moni-auth-panel {
+    width: 100%;
+  }
+
+  .moni-login-card {
+    width: min(480px, 100%);
+    padding: 1.2rem 1rem 1.15rem;
+    background: linear-gradient(
+        145deg,
+        rgba(94, 228, 214, 0.12),
+        rgba(139, 92, 246, 0.1) 42%,
+        rgba(10, 12, 20, 0.88)
+      ),
+      rgba(7, 9, 16, 0.8);
+  }
 }
 
 /* ——— Loading ——— */
@@ -2126,4 +2195,369 @@
   overflow: auto;
   font-size: 0.78rem;
   color: #fecaca;
+}
+
+/* ——— Design polish layer (web + mobile) ——— */
+.moni-app {
+  max-width: 1220px;
+  padding-inline: clamp(0.7rem, 2vw, 1.1rem);
+}
+
+.moni-main {
+  padding-top: 0.56rem;
+}
+
+.moni-card,
+.moni-panel,
+.moni-login-card {
+  border-color: rgba(255, 255, 255, 0.11);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.24);
+  background-clip: padding-box;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.moni-card__title,
+.moni-panel__title {
+  letter-spacing: -0.01em;
+}
+
+.moni-card__title {
+  font-size: clamp(0.96rem, 0.89rem + 0.25vw, 1.08rem);
+}
+
+.moni-card__sub {
+  font-size: clamp(0.78rem, 0.74rem + 0.16vw, 0.87rem);
+  line-height: 1.44;
+}
+
+.moni-btn {
+  min-height: 2.52rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 650;
+  letter-spacing: 0.005em;
+  transition:
+    background 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease,
+    transform 0.12s ease,
+    box-shadow 0.16s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .moni-btn:not(:disabled):hover {
+    transform: translateY(-1px);
+  }
+}
+
+.moni-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.moni-btn--primary {
+  box-shadow: 0 10px 24px rgba(36, 181, 169, 0.28);
+}
+
+.moni-btn--secondary {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.moni-input {
+  min-height: 2.52rem;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    background 0.16s ease;
+}
+
+.moni-input:focus {
+  box-shadow:
+    0 0 0 1px rgba(94, 228, 214, 0.34),
+    0 0 0 4px rgba(94, 228, 214, 0.12);
+}
+
+.moni-form-error {
+  border-radius: 10px;
+  padding: 0.42rem 0.58rem;
+  background: rgba(251, 113, 133, 0.1);
+  border: 1px solid rgba(251, 113, 133, 0.32);
+}
+
+.moni-topnav__shell-row {
+  padding-block: 0.48rem 0.58rem;
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.moni-topnav__menu-btn {
+  border-radius: 12px;
+}
+
+.moni-topnav__drawer {
+  border-radius: 14px;
+}
+
+.moni-topnav__drawer-item {
+  border-radius: 11px;
+}
+
+.moni-login-card {
+  border-radius: 24px;
+}
+
+.moni-login-card__logo {
+  width: min(258px, 84%);
+}
+
+.moni-login-card__hint {
+  margin-bottom: 1rem;
+}
+
+.moni-login-sep {
+  margin-block: 0.92rem;
+}
+
+.moni-login-register {
+  opacity: 0;
+}
+
+.moni-login-register.is-open {
+  opacity: 1;
+}
+
+@media (max-width: 899px) {
+  .moni-auth-shell {
+    padding: 1rem 0.92rem 1.25rem;
+  }
+
+  .moni-auth-panel {
+    align-items: stretch;
+  }
+
+  .moni-login-card {
+    width: min(540px, 100%);
+    border-radius: 20px;
+    padding: 1.15rem 0.95rem 1.05rem;
+  }
+
+  .moni-login-card__title {
+    font-size: 1.25rem;
+  }
+
+  .moni-login-card__logo {
+    width: min(246px, 86%);
+  }
+
+  .moni-btn,
+  .moni-input {
+    min-height: 2.65rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* ——— Dashboard pixel-polish pass ——— */
+body {
+  line-height: 1.45;
+  text-rendering: optimizeLegibility;
+  font-kerning: normal;
+}
+
+.moni-layout {
+  gap: clamp(0.68rem, 1.4vw, 1rem);
+}
+
+.moni-layout__primary {
+  gap: clamp(0.62rem, 1.25vw, 0.88rem);
+}
+
+.moni-dashboard-insights,
+.moni-dashboard-overview,
+.moni-dashboard-insights__stack,
+.moni-layout__aside {
+  gap: clamp(0.55rem, 1vw, 0.8rem);
+}
+
+@media (min-width: 980px) {
+  .moni-layout {
+    grid-template-columns: minmax(0, 1fr) 336px;
+  }
+
+  .moni-layout__aside {
+    top: 0.42rem;
+  }
+}
+
+.moni-hero-main {
+  border-radius: 24px;
+  padding: clamp(1.1rem, 1.9vw, 1.45rem) clamp(1rem, 1.8vw, 1.35rem);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.moni-hero-main__kicker {
+  font-size: clamp(0.74rem, 0.66rem + 0.2vw, 0.82rem);
+}
+
+.moni-hero-main__amount {
+  margin-top: 0.34rem;
+  font-size: clamp(1.95rem, 4vw, 2.9rem);
+  line-height: 1.04;
+}
+
+.moni-hero-main__caption {
+  margin-top: 0.58rem;
+  font-size: clamp(0.86rem, 0.78rem + 0.24vw, 0.96rem);
+  line-height: 1.42;
+}
+
+.moni-mini-metrics__card {
+  border-radius: 15px;
+  padding: 0.78rem 0.86rem;
+}
+
+.moni-mini-metrics__label {
+  font-size: 0.76rem;
+}
+
+.moni-mini-metrics__value {
+  margin-top: 0.26rem;
+  font-size: clamp(1.02rem, 0.98rem + 0.2vw, 1.12rem);
+  letter-spacing: -0.01em;
+}
+
+.moni-alert {
+  border-radius: 15px;
+  padding: 0.68rem 0.85rem;
+}
+
+.moni-alert__text {
+  font-size: clamp(0.84rem, 0.8rem + 0.16vw, 0.92rem);
+}
+
+.moni-card,
+.moni-panel {
+  border-radius: 17px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015)),
+    rgba(16, 19, 31, 0.74);
+}
+
+.moni-card {
+  padding: clamp(0.82rem, 1.1vw, 0.98rem) clamp(0.86rem, 1.2vw, 1rem);
+}
+
+.moni-panel {
+  padding: clamp(0.68rem, 1vw, 0.82rem) clamp(0.76rem, 1.1vw, 0.9rem)
+    clamp(0.75rem, 1vw, 0.9rem);
+}
+
+.moni-panel__title {
+  margin-bottom: 0.6rem;
+  font-size: clamp(0.88rem, 0.84rem + 0.14vw, 0.96rem);
+}
+
+.moni-list {
+  gap: 0.36rem;
+}
+
+.moni-list__item {
+  border-radius: 11px;
+  padding: 0.47rem 0.56rem;
+}
+
+.moni-list__name {
+  font-size: clamp(0.81rem, 0.76rem + 0.16vw, 0.88rem);
+}
+
+.moni-list__meta {
+  font-size: clamp(0.71rem, 0.67rem + 0.14vw, 0.76rem);
+}
+
+.moni-action-btn {
+  width: 2.05rem;
+  height: 2.05rem;
+}
+
+.moni-action-btn:active {
+  transform: scale(0.97);
+}
+
+.moni-collapse__trigger {
+  border-radius: 11px;
+  padding: 0.42rem 0.5rem;
+  font-size: 0.78rem;
+}
+
+.moni-donut-visual {
+  width: min(14.6rem, 100%);
+}
+
+.moni-proj-chart__plot {
+  min-height: 6.8rem;
+}
+
+.moni-proj-chart__col-inner {
+  height: 5.95rem;
+}
+
+.moni-topnav__session {
+  border-radius: 999px;
+  padding: 0.2rem 0.45rem 0.2rem 0.2rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.moni-topnav .moni-avatar {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+}
+
+.moni-topnav__menu-btn {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+@media (max-width: 640px) {
+  .moni-app {
+    padding-inline: 0.65rem;
+    padding-bottom: 1rem;
+  }
+
+  .moni-topnav__shell-row {
+    padding-block: 0.35rem 0.5rem;
+  }
+
+  .moni-hero-main {
+    border-radius: 20px;
+    padding: 1rem 0.92rem 1.05rem;
+  }
+
+  .moni-card,
+  .moni-panel {
+    border-radius: 15px;
+  }
+
+  .moni-card {
+    padding: 0.78rem 0.8rem;
+  }
+
+  .moni-panel {
+    padding: 0.66rem 0.7rem 0.72rem;
+  }
+
+  .moni-layout__aside .moni-form-row--split {
+    gap: 0.42rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .moni-anim-in,
+  .moni-collapse__inner,
+  .moni-btn,
+  .moni-action-btn,
+  .moni-topnav__drawer {
+    animation: none !important;
+    transition: none !important;
+  }
 }

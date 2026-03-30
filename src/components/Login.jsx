@@ -43,6 +43,7 @@ export function Login() {
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)
+  const [registerOpen, setRegisterOpen] = useState(false)
 
   const validateAll = () => {
     const e1 = nameFieldError(firstName) || nameFieldError(lastName)
@@ -99,48 +100,23 @@ export function Login() {
       tabIndex={-1}
       aria-labelledby="login-title"
     >
-      <h2 id="login-title" className="moni-login-card__title">
-        Crear tu cuenta
-      </h2>
-      <p className="moni-login-card__hint">
-        Usá tu email o continuá con Google.
-      </p>
-
-      <button
-        type="button"
-        className="moni-btn moni-btn--secondary moni-btn--with-icon moni-btn--block"
-        onClick={onGoogle}
-        disabled={busy}
-      >
-        <GoogleMark />
-        <span>Continuar con Google</span>
-      </button>
-
-      <div className="moni-login-sep" role="presentation">
-        <span>o con email</span>
+      <div className="moni-login-card__brand">
+        <img
+          className="moni-login-card__logo"
+          src="/images/moni-logo.png"
+          alt="Moni"
+          decoding="async"
+        />
       </div>
 
-      <form className="moni-form" onSubmit={onRegister} noValidate>
-        <div className="moni-form-row moni-form-row--split">
-          <label className="moni-field">
-            <span className="moni-field__label">Nombre</span>
-            <input
-              className="moni-input"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              autoComplete="given-name"
-            />
-          </label>
-          <label className="moni-field">
-            <span className="moni-field__label">Apellido</span>
-            <input
-              className="moni-input"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              autoComplete="family-name"
-            />
-          </label>
-        </div>
+      <h2 id="login-title" className="moni-login-card__title">
+        Iniciar sesión
+      </h2>
+      <p className="moni-login-card__hint">
+        Entrá con tu email y contraseña.
+      </p>
+
+      <form className="moni-form" onSubmit={onLoginOnly} noValidate>
         <div className="moni-form-row moni-form-row--single">
           <label className="moni-field">
             <span className="moni-field__label">Email</span>
@@ -153,7 +129,7 @@ export function Login() {
             />
           </label>
         </div>
-        <div className="moni-form-row moni-form-row--split">
+        <div className="moni-form-row moni-form-row--single">
           <label className="moni-field">
             <span className="moni-field__label">Contraseña</span>
             <input
@@ -161,17 +137,7 @@ export function Login() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              autoComplete="new-password"
-            />
-          </label>
-          <label className="moni-field">
-            <span className="moni-field__label">Confirmar</span>
-            <input
-              className="moni-input"
-              type="password"
-              value={passwordConfirm}
-              onChange={(e) => setPasswordConfirm(e.target.value)}
-              autoComplete="new-password"
+              autoComplete="current-password"
             />
           </label>
         </div>
@@ -188,18 +154,108 @@ export function Login() {
             className="moni-btn moni-btn--primary moni-btn--block"
             disabled={busy}
           >
-            Crear cuenta
-          </button>
-          <button
-            type="button"
-            className="moni-btn moni-btn--ghost moni-btn--block"
-            onClick={onLoginOnly}
-            disabled={busy}
-          >
             Ya tengo cuenta
           </button>
         </div>
       </form>
+
+      <button
+        type="button"
+        className="moni-btn moni-btn--secondary moni-btn--with-icon moni-btn--block"
+        onClick={onGoogle}
+        disabled={busy}
+      >
+        <GoogleMark />
+        <span>Continuar con Google</span>
+      </button>
+
+      <div className="moni-login-sep" role="presentation">
+        <span>¿No tenés cuenta?</span>
+      </div>
+
+      <button
+        type="button"
+        className="moni-btn moni-btn--ghost moni-btn--block"
+        aria-expanded={registerOpen}
+        aria-controls="moni-register-collapse"
+        onClick={() => {
+          setError(null)
+          setRegisterOpen((v) => !v)
+        }}
+        disabled={busy}
+      >
+        {registerOpen ? 'Ocultar registro' : 'Registrarme'}
+      </button>
+
+      <div
+        id="moni-register-collapse"
+        className={`moni-login-register ${registerOpen ? 'is-open' : ''}`}
+      >
+        <form className="moni-form" onSubmit={onRegister} noValidate>
+          <div className="moni-form-row moni-form-row--split">
+            <label className="moni-field">
+              <span className="moni-field__label">Nombre</span>
+              <input
+                className="moni-input"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                autoComplete="given-name"
+              />
+            </label>
+            <label className="moni-field">
+              <span className="moni-field__label">Apellido</span>
+              <input
+                className="moni-input"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                autoComplete="family-name"
+              />
+            </label>
+          </div>
+          <div className="moni-form-row moni-form-row--single">
+            <label className="moni-field">
+              <span className="moni-field__label">Email</span>
+              <input
+                className="moni-input"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+              />
+            </label>
+          </div>
+          <div className="moni-form-row moni-form-row--split">
+            <label className="moni-field">
+              <span className="moni-field__label">Contraseña</span>
+              <input
+                className="moni-input"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
+              />
+            </label>
+            <label className="moni-field">
+              <span className="moni-field__label">Confirmar</span>
+              <input
+                className="moni-input"
+                type="password"
+                value={passwordConfirm}
+                onChange={(e) => setPasswordConfirm(e.target.value)}
+                autoComplete="new-password"
+              />
+            </label>
+          </div>
+
+          <button
+            type="submit"
+            className="moni-btn moni-btn--primary moni-btn--block"
+            disabled={busy}
+          >
+            Crear cuenta
+          </button>
+        </form>
+      </div>
     </section>
   )
 }

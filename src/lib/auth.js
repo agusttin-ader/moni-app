@@ -3,6 +3,7 @@ import {
   GoogleAuthProvider,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
   signOut,
 } from 'firebase/auth'
 import { auth, firebaseInitError } from './firebase.js'
@@ -12,6 +13,24 @@ function authUnavailableMessage() {
     firebaseInitError ??
     'Firebase no está disponible. Revisá la configuración en .env y reiniciá el servidor de desarrollo.'
   )
+}
+
+function mapAuthError(error, fallback) {
+  const code = error?.code ?? ''
+  if (code === 'auth/unauthorized-domain') {
+    return 'Dominio no autorizado en Firebase Auth. Agregá tu dominio de Vercel y localhost en Authentication > Settings > Authorized domains.'
+  }
+  return error?.message ?? fallback
+}
+
+function shouldUseGoogleRedirect() {
+  if (typeof window === 'undefined') return false
+  const ua = window.navigator.userAgent || ''
+  const isiOS = /iPad|iPhone|iPod/.test(ua)
+  const isSafari =
+    /Safari/i.test(ua) &&
+    !/CriOS|FxiOS|EdgiOS|OPiOS|DuckDuckGo|GSA|YaBrowser/i.test(ua)
+  return isiOS || isSafari
 }
 
 export async function register(email, password) {
@@ -24,7 +43,7 @@ export async function register(email, password) {
     )
     return { user: credential.user, error: null }
   } catch (error) {
-    return { user: null, error: error?.message ?? 'Error al registrarse' }
+    return { user: null, error: mapAuthError(error, 'Error al registrarse') }
   }
 }
 
@@ -34,7 +53,7 @@ export async function login(email, password) {
     const credential = await signInWithEmailAndPassword(auth, email, password)
     return { user: credential.user, error: null }
   } catch (error) {
-    return { user: null, error: error?.message ?? 'Error al iniciar sesión' }
+    return { user: null, error: mapAuthError(error, 'Error al iniciar sesión') }
   }
 }
 
@@ -44,7 +63,7 @@ export async function logout() {
     await signOut(auth)
     return { error: null }
   } catch (error) {
-    return { error: error?.message ?? 'Error al cerrar sesión' }
+    return { error: mapAuthError(error, 'Error al cerrar sesión') }
   }
 }
 
@@ -52,9 +71,13 @@ export async function loginWithGoogle() {
   if (!auth) return { user: null, error: authUnavailableMessage() }
   try {
     const provider = new GoogleAuthProvider()
+    if (shouldUseGoogleRedirect()) {
+      await signInWithRedirect(auth, provider)
+      return { user: null, error: null }
+    }
     const credential = await signInWithPopup(auth, provider)
     return { user: credential.user, error: null }
   } catch (error) {
-    return { user: null, error: error?.message ?? 'Error con Google' }
+    return { user: null, error: mapAuthError(error, 'Error con Google') }
   }
 }
