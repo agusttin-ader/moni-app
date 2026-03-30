@@ -12,6 +12,7 @@ import {
 import { auth, firebaseInitError } from './firebase.js'
 
 const REDIRECT_AUTH_ERROR_KEY = 'moni_auth_redirect_error'
+const REDIRECT_AUTH_PENDING_KEY = 'moni_auth_redirect_pending'
 let persistenceReadyPromise = null
 
 function authUnavailableMessage() {
@@ -59,21 +60,44 @@ export function consumeRedirectAuthError() {
   }
 }
 
+export function markRedirectAuthPending() {
+  if (typeof window === 'undefined') return
+  try {
+    window.sessionStorage.setItem(REDIRECT_AUTH_PENDING_KEY, '1')
+  } catch {
+    // No-op
+  }
+}
+
+export function consumeRedirectAuthPending() {
+  if (typeof window === 'undefined') return false
+  try {
+    const hadPending =
+      window.sessionStorage.getItem(REDIRECT_AUTH_PENDING_KEY) === '1'
+    if (hadPending) window.sessionStorage.removeItem(REDIRECT_AUTH_PENDING_KEY)
+    return hadPending
+  } catch {
+    return false
+  }
+}
+
 async function ensureAuthPersistence() {
-  if (!auth) return
+  if (!auth) return false
   if (persistenceReadyPromise) return persistenceReadyPromise
   persistenceReadyPromise = (async () => {
     try {
       await setPersistence(auth, browserLocalPersistence)
-      return
+      return true
     } catch {
       // iOS/Safari a veces bloquea local persistence; intentamos session.
     }
     try {
       await setPersistence(auth, browserSessionPersistence)
+      return true
     } catch {
       // Último fallback: dejamos el comportamiento por defecto.
     }
+    return false
   })()
   return persistenceReadyPromise
 }
@@ -139,7 +163,7 @@ export async function loginWithGoogle() {
 
     const provider = new GoogleAuthProvider()
     provider.setCustomParameters({ prompt: 'select_account' })
-    await ensureAuthPersistence()
+    const hasPersistence = await ensureAuthPersistence()
     try {
       const credential = await signInWithPopup(auth, provider)
       return { user: credential.user, error: null }
@@ -151,6 +175,14 @@ export async function loginWithGoogle() {
         code === 'auth/popup-closed-by-user' ||
         code === 'auth/operation-not-supported-in-this-environment'
       ) {
+        if (!hasPersistence) {
+          return {
+            user: null,
+            error:
+              'Este navegador móvil bloquea la persistencia de sesión para Google. Probá con email/contraseña o habilitá cookies y abrí de nuevo.',
+          }
+        }
+        markRedirectAuthPending()
         await signInWithRedirect(auth, provider)
         return { user: null, error: null }
       }

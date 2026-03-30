@@ -3,9 +3,19 @@ import { getAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
 
+const envAuthDomain = import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ?? ''
+const runtimeHost =
+  typeof window !== 'undefined' ? window.location.hostname : ''
+const isLocalRuntime =
+  runtimeHost === 'localhost' || runtimeHost === '127.0.0.1'
+const resolvedAuthDomain =
+  import.meta.env.PROD && runtimeHost && !isLocalRuntime
+    ? runtimeHost
+    : envAuthDomain
+
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY ?? '',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ?? '',
+  authDomain: resolvedAuthDomain,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID ?? '',
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET ?? '',
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID ?? '',
