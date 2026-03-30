@@ -6,7 +6,39 @@ import { useMoniState } from './hooks/useMoniState.js'
 import { logout } from './lib/auth.js'
 import { firebaseInitError } from './lib/firebase.js'
 
-const Dashboard = lazy(() =>
+const LAZY_RELOAD_KEY = 'moni_lazy_reload_dashboard_once'
+
+function isChunkLoadError(error) {
+  const msg = String(error?.message ?? '')
+  return (
+    /Failed to fetch dynamically imported module/i.test(msg) ||
+    /Importing a module script failed/i.test(msg) ||
+    /ChunkLoadError/i.test(msg) ||
+    /Loading chunk [\d\w-]+ failed/i.test(msg)
+  )
+}
+
+function lazyWithSingleReload(importer) {
+  return lazy(async () => {
+    try {
+      return await importer()
+    } catch (error) {
+      if (typeof window !== 'undefined' && isChunkLoadError(error)) {
+        const alreadyRetried =
+          window.sessionStorage.getItem(LAZY_RELOAD_KEY) === '1'
+        if (!alreadyRetried) {
+          window.sessionStorage.setItem(LAZY_RELOAD_KEY, '1')
+          window.location.reload()
+          return new Promise(() => {})
+        }
+        window.sessionStorage.removeItem(LAZY_RELOAD_KEY)
+      }
+      throw error
+    }
+  })
+}
+
+const Dashboard = lazyWithSingleReload(() =>
   import('./components/Dashboard.jsx').then((m) => ({ default: m.Dashboard })),
 )
 

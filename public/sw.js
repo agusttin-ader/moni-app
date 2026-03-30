@@ -2,7 +2,7 @@
  * PWA: nunca devolver index.html para JS/CSS u otros assets.
  * Hacerlo rompe la carga de módulos (pantalla negra en mobile / Safari).
  */
-const CACHE_NAME = 'moni-cache-v2'
+const CACHE_NAME = 'moni-cache-v3'
 const APP_SHELL = ['/', '/index.html', '/manifest.webmanifest']
 
 self.addEventListener('install', (event) => {
@@ -43,11 +43,11 @@ self.addEventListener('fetch', (event) => {
   // Solo la navegación documento puede caer en el HTML cacheado (SPA offline).
   if (req.mode === 'navigate') {
     event.respondWith(
-      fetch(req)
+      fetch(req, { cache: 'no-store' })
         .then((res) => {
           if (res && res.ok && res.type === 'basic') {
             const copy = res.clone()
-            caches.open(CACHE_NAME).then((c) => c.put(req, copy))
+            caches.open(CACHE_NAME).then((c) => c.put('/index.html', copy))
           }
           return res
         })
