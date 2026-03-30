@@ -102,9 +102,6 @@ export function computeMonthBalance(state, monthOffset) {
 
 const PROJECTION_KEYS = ['actual', 'siguiente', 'siguiente+1']
 
-/** Horizonte de meses en flujo proyectado (gráfico, lista, barras, alertas, historial). */
-export const PROJECTION_HORIZON_MONTHS = 6
-
 export function projectMonths(state, count = 3) {
   const out = []
   for (let i = 0; i < count; i++) {
@@ -133,22 +130,16 @@ export function deficitAlertText(state, horizonMonths = 3) {
 }
 
 export function projectionRelativeTitle(projectionMonthKey) {
-  const key = String(projectionMonthKey ?? '')
-  if (key === 'actual') return 'Mes actual'
-  if (key === 'siguiente') return 'Próximo mes'
-  const m = /^siguiente\+(\d+)$/.exec(key)
-  if (m) {
-    const n = Number(m[1]) + 1
-    const words = {
-      2: 'En dos meses',
-      3: 'En tres meses',
-      4: 'En cuatro meses',
-      5: 'En cinco meses',
-      6: 'En seis meses',
-    }
-    return words[n] ?? `En ${n} meses`
+  switch (projectionMonthKey) {
+    case 'actual':
+      return 'Mes actual'
+    case 'siguiente':
+      return 'Próximo mes'
+    case 'siguiente+1':
+      return 'En dos meses'
+    default:
+      return projectionMonthKey
   }
-  return projectionMonthKey
 }
 
 export function projectionBalanceClassSuffix(balance) {

@@ -1,22 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
-  PROJECTION_HORIZON_MONTHS,
   projectionBalanceClassSuffix,
   projectionDetailRows,
 } from '../lib/calculations.js'
 import { formatMoney } from '../lib/format.js'
 
-function shortMonthLabel(row) {
-  const k = String(row?.monthKey ?? '')
-  if (k === 'actual') return 'Ahora'
-  if (k === 'siguiente') return '+1 mes'
-  const m = /^siguiente\+(\d+)$/.exec(k)
-  if (m) return `+${Number(m[1]) + 1} meses`
-  return String(row?.title ?? '')
+function shortMonthLabel(title) {
+  const t = String(title ?? '')
+  if (t === 'Mes actual') return 'Ahora'
+  if (t === 'Próximo mes') return '+1 mes'
+  if (t === 'En dos meses') return '+2 meses'
+  return t
 }
-
-/** viewBox ancho (100) × bajo (~38): el wrap usa aspect-ratio ancho para usar todo el ancho de la tarjeta. */
-const BCHART_VB_H = 38
 
 /** Escala Y según saldos reales: arriba = más saldo, abajo = menos (déficit). */
 function balanceChartGeometry(rows) {
@@ -29,26 +24,15 @@ function balanceChartGeometry(rows) {
     maxB += pad
   }
   const span = Math.max(maxB - minB, 1e-9)
-  const padY = 5
-  const innerH = BCHART_VB_H - 2 * padY
+  const padY = 10
+  const innerH = 100 - 2 * padY
   const yFor = (b) => padY + innerH * ((maxB - b) / span)
   const yZero =
-    minB <= 0 && maxB >= 0
-      ? yFor(0)
-      : minB > 0
-        ? padY + innerH + 1.5
-        : padY - 1.5
-
-  const padX = 3.5
-  const innerW = 100 - 2 * padX
+    minB <= 0 && maxB >= 0 ? yFor(0) : minB > 0 ? padY + innerH + 2 : padY - 2
 
   const points = rows.map((row, index) => {
-    const x =
-      rows.length > 1 ? padX + (index / (rows.length - 1)) * innerW : 50
-    const y = Math.min(
-      BCHART_VB_H - 3,
-      Math.max(3, yFor(row.balance)),
-    )
+    const x = rows.length > 1 ? (index / (rows.length - 1)) * 88 + 6 : 50
+    const y = Math.min(96, Math.max(4, yFor(row.balance)))
     return { x, y, balance: row.balance }
   })
 
@@ -60,7 +44,7 @@ function balanceChartGeometry(rows) {
 }
 
 export function Projection({ state }) {
-  const rows = projectionDetailRows(state, PROJECTION_HORIZON_MONTHS)
+  const rows = projectionDetailRows(state, 3)
   const [ready, setReady] = useState(false)
 
   const geo = useMemo(() => balanceChartGeometry(rows), [rows])
@@ -93,25 +77,21 @@ export function Projection({ state }) {
         </p>
       </div>
 
-      <div
-        className="moni-projection-chart"
-        role="img"
-        aria-label={`Saldo neto proyectado en ${PROJECTION_HORIZON_MONTHS} meses`}
-      >
+      <div className="moni-projection-chart" role="img" aria-label="Saldo neto proyectado en tres meses">
         <div
           className={`moni-projection-chart__svg-wrap ${ready ? 'moni-projection-chart--ready' : ''}`}
         >
           <svg
             className="moni-projection-chart__svg"
-            viewBox={`0 0 100 ${BCHART_VB_H}`}
+            viewBox="0 0 100 100"
             preserveAspectRatio="xMidYMid meet"
           >
             {geo.showZeroLine ? (
               <line
                 className="moni-projection-chart__zero"
-                x1={1}
+                x1={4}
                 y1={geo.yZero}
-                x2={99}
+                x2={96}
                 y2={geo.yZero}
               />
             ) : null}
@@ -126,7 +106,7 @@ export function Projection({ state }) {
                 className={`moni-projection-chart__dot moni-projection-chart__dot--${projectionBalanceClassSuffix(p.balance)}`}
                 cx={p.x}
                 cy={p.y}
-                r="3.25"
+                r="4"
               />
             ))}
           </svg>
@@ -135,7 +115,7 @@ export function Projection({ state }) {
           {rows.map((row) => (
             <li key={row.monthKey}>
               <span className="moni-projection-chart__key-label">
-                {shortMonthLabel(row)}
+                {shortMonthLabel(row.title)}
               </span>
               <span
                 className={`moni-projection-chart__key-val moni-projection-chart__key-val--${projectionBalanceClassSuffix(row.balance)}`}

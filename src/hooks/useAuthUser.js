@@ -1,7 +1,6 @@
-import { getRedirectResult, onAuthStateChanged } from 'firebase/auth'
+import { onAuthStateChanged } from 'firebase/auth'
 import { useEffect, useState } from 'react'
 import { auth } from '../lib/firebase.js'
-import { storeRedirectAuthError } from '../lib/auth.js'
 
 export function useAuthUser() {
   const [user, setUser] = useState(null)
@@ -16,54 +15,11 @@ export function useAuthUser() {
       return () => clearTimeout(t)
     }
 
-    // En algunos navegadores móviles el evento de auth puede retrasarse
-    // después de redirect/popup. Usamos fallback con auth.currentUser.
-    let redirectDone = false
-    let firstAuthEvent = false
-    let fallbackTimer = 0
-    const finishIfReady = () => {
-      if (redirectDone && firstAuthEvent) setLoading(false)
-    }
-    const syncFromCurrentUser = () => {
-      const u = auth.currentUser
-      if (u) setUser(u)
-      if (redirectDone) setLoading(false)
-    }
-
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u)
-      firstAuthEvent = true
-      finishIfReady()
+      setLoading(false)
     })
-
-    void getRedirectResult(auth)
-      .then((res) => {
-        if (res?.user) setUser(res.user)
-      })
-      .catch((e) => {
-        console.error(e)
-        storeRedirectAuthError(e)
-      })
-      .finally(() => {
-        redirectDone = true
-        finishIfReady()
-      })
-
-    // Fallback defensivo para mobile: si no llega evento a tiempo, usamos currentUser.
-    fallbackTimer = window.setTimeout(() => {
-      syncFromCurrentUser()
-    }, 2200)
-
-    const onFocus = () => syncFromCurrentUser()
-    window.addEventListener('focus', onFocus)
-    document.addEventListener('visibilitychange', onFocus)
-
-    return () => {
-      if (fallbackTimer) window.clearTimeout(fallbackTimer)
-      window.removeEventListener('focus', onFocus)
-      document.removeEventListener('visibilitychange', onFocus)
-      unsub()
-    }
+    return () => unsub()
   }, [])
 
   return { user, loading }

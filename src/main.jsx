@@ -4,14 +4,9 @@ import './index.css'
 import App from './App.jsx'
 import { RootErrorBoundary } from './RootErrorBoundary.jsx'
 
-// Service worker desactivado temporalmente para evitar desfasajes de chunks
-// en mobile tras deploys (pantalla de login/dashboard que no carga).
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker
-      .getRegistrations()
-      .then((regs) => Promise.all(regs.map((r) => r.unregister())))
-      .catch(() => {})
+    navigator.serviceWorker.register('/sw.js').catch(() => {})
   })
 }
 

@@ -1,11 +1,14 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import './App.css'
-import { Dashboard } from './components/Dashboard.jsx'
 import { Login } from './components/Login.jsx'
 import { useAuth } from './hooks/useAuth.js'
 import { useMoniState } from './hooks/useMoniState.js'
 import { logout } from './lib/auth.js'
 import { firebaseInitError } from './lib/firebase.js'
+
+const Dashboard = lazy(() =>
+  import('./components/Dashboard.jsx').then((m) => ({ default: m.Dashboard })),
+)
 
 const MOTIVATION_QUOTES = [
   {
@@ -147,12 +150,21 @@ export default function App() {
           <p className="moni-loading-text">Cerrando sesión...</p>
         </div>
       ) : null}
-      <Dashboard
-        state={state}
-        dispatch={dispatch}
-        user={user}
-        onLogout={handleLogout}
-      />
+      <Suspense
+        fallback={
+          <div className="moni-loading-shell" role="status" aria-live="polite">
+            <div className="moni-loading-spinner" aria-hidden />
+            <p className="moni-loading-text">Preparando panel...</p>
+          </div>
+        }
+      >
+        <Dashboard
+          state={state}
+          dispatch={dispatch}
+          user={user}
+          onLogout={handleLogout}
+        />
+      </Suspense>
     </>
   )
 }
