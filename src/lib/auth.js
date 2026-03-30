@@ -78,21 +78,6 @@ async function ensureAuthPersistence() {
   return persistenceReadyPromise
 }
 
-function shouldUseGoogleRedirect() {
-  if (typeof window === 'undefined') return false
-  const ua = window.navigator.userAgent || ''
-  const isiOS =
-    /iPhone|iPad|iPod/i.test(ua) ||
-    (window.navigator.maxTouchPoints > 1 && /Macintosh/i.test(ua))
-  if (isiOS) return true
-  const isSafari =
-    /Safari/i.test(ua) &&
-    !/Chromium|Chrome|Edg|CriOS|FxiOS|OPiOS|DuckDuckGo|GSA|YaBrowser/i.test(
-      ua,
-    )
-  return isSafari
-}
-
 export function isIOSStandalone() {
   if (typeof window === 'undefined') return false
   const ua = window.navigator.userAgent || ''
@@ -155,12 +140,6 @@ export async function loginWithGoogle() {
     const provider = new GoogleAuthProvider()
     provider.setCustomParameters({ prompt: 'select_account' })
     await ensureAuthPersistence()
-
-    if (shouldUseGoogleRedirect()) {
-      await signInWithRedirect(auth, provider)
-      return { user: null, error: null }
-    }
-
     try {
       const credential = await signInWithPopup(auth, provider)
       return { user: credential.user, error: null }
@@ -169,6 +148,7 @@ export async function loginWithGoogle() {
       if (
         code === 'auth/popup-blocked' ||
         code === 'auth/cancelled-popup-request' ||
+        code === 'auth/popup-closed-by-user' ||
         code === 'auth/operation-not-supported-in-this-environment'
       ) {
         await signInWithRedirect(auth, provider)
