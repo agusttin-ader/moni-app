@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Moni — organizá ingresos, gastos y cuotas. Mirá cuánto te queda este mes y la proyección a tres meses."
+    />
+    <meta name="theme-color" content="#0b0c12" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Moni" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Moni — finanzas personales" />
+    <meta
+      property="og:description"
+      content="Claridad mensual: ingresos, gastos fijos, deudas y proyección en tres meses."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Moni — finanzas personales" />
+    <meta
+      name="twitter:description"
+      content="Claridad mensual: ingresos, gastos fijos, deudas y proyección en tres meses."
+    />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <title>Moni — finanzas personales</title>
+  </head>
+  <body style="margin:0;background:#0b0c12;color:rgba(245,245,250,0.92)">
+    <script>
+      ;(function () {
+        var h = location.hostname
+        if (h !== 'localhost' && h !== '127.0.0.1') return
+        if (sessionStorage.getItem('moni_sw_clean') === '1') return
+        if (!('serviceWorker' in navigator)) return
+        sessionStorage.setItem('moni_sw_clean', '1')
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          return Promise.all(regs.map(function (r) { return r.unregister() }))
+        }).then(function () { location.reload() }).catch(function () {})
+      })()
+    </script>
+    <noscript>
+      <p style="padding:1.5rem;font-family:system-ui,sans-serif">
+        Necesitás JavaScript para usar Moni.
+      </p>
+    </noscript>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
