@@ -1,6 +1,9 @@
 import {
+  browserLocalPersistence,
+  browserSessionPersistence,
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
+  setPersistence,
   signInWithEmailAndPassword,
   signInWithPopup,
   signInWithRedirect,
@@ -9,6 +12,7 @@ import {
 import { auth, firebaseInitError } from './firebase.js'
 
 const REDIRECT_AUTH_ERROR_KEY = 'moni_auth_redirect_error'
+let persistenceReadyPromise = null
 
 function authUnavailableMessage() {
   return (
@@ -55,6 +59,25 @@ export function consumeRedirectAuthError() {
   }
 }
 
+async function ensureAuthPersistence() {
+  if (!auth) return
+  if (persistenceReadyPromise) return persistenceReadyPromise
+  persistenceReadyPromise = (async () => {
+    try {
+      await setPersistence(auth, browserLocalPersistence)
+      return
+    } catch {
+      // iOS/Safari a veces bloquea local persistence; intentamos session.
+    }
+    try {
+      await setPersistence(auth, browserSessionPersistence)
+    } catch {
+      // Último fallback: dejamos el comportamiento por defecto.
+    }
+  })()
+  return persistenceReadyPromise
+}
+
 function shouldUseGoogleRedirect() {
   if (typeof window === 'undefined') return false
   const ua = window.navigator.userAgent || ''
@@ -85,6 +108,7 @@ export function isIOSStandalone() {
 export async function register(email, password) {
   if (!auth) return { user: null, error: authUnavailableMessage() }
   try {
+    await ensureAuthPersistence()
     const credential = await createUserWithEmailAndPassword(
       auth,
       email,
@@ -99,6 +123,7 @@ export async function register(email, password) {
 export async function login(email, password) {
   if (!auth) return { user: null, error: authUnavailableMessage() }
   try {
+    await ensureAuthPersistence()
     const credential = await signInWithEmailAndPassword(auth, email, password)
     return { user: credential.user, error: null }
   } catch (error) {
@@ -129,6 +154,7 @@ export async function loginWithGoogle() {
 
     const provider = new GoogleAuthProvider()
     provider.setCustomParameters({ prompt: 'select_account' })
+    await ensureAuthPersistence()
 
     if (shouldUseGoogleRedirect()) {
       await signInWithRedirect(auth, provider)

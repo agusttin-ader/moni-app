@@ -16,17 +16,30 @@ export function useAuthUser() {
       return () => clearTimeout(t)
     }
 
-    // Completar redirect de Google (no bloquear el listener: en StrictMode un await
-    // previo impedía registrar onAuthStateChanged y la sesión parecía “perderse”).
-    void getRedirectResult(auth).catch((e) => {
-      console.error(e)
-      storeRedirectAuthError(e)
-    })
+    // No marcamos loading=false hasta que estén:
+    // 1) terminado getRedirectResult y 2) recibido el primer onAuthStateChanged.
+    let redirectDone = false
+    let firstAuthEvent = false
+    const finishIfReady = () => {
+      if (redirectDone && firstAuthEvent) setLoading(false)
+    }
 
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u)
-      setLoading(false)
+      firstAuthEvent = true
+      finishIfReady()
     })
+
+    void getRedirectResult(auth)
+      .catch((e) => {
+        console.error(e)
+        storeRedirectAuthError(e)
+      })
+      .finally(() => {
+        redirectDone = true
+        finishIfReady()
+      })
+
     return () => unsub()
   }, [])
 
