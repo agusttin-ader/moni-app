@@ -1,10 +1,15 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   emailFieldError,
   nameFieldError,
   passwordFieldError,
 } from '../lib/formValidation.js'
-import { login, loginWithGoogle, register } from '../lib/auth.js'
+import {
+  consumeRedirectAuthError,
+  login,
+  loginWithGoogle,
+  register,
+} from '../lib/auth.js'
 
 function GoogleMark() {
   return (
@@ -44,6 +49,11 @@ export function Login() {
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)
   const [registerOpen, setRegisterOpen] = useState(false)
+
+  useEffect(() => {
+    const redirectError = consumeRedirectAuthError()
+    if (redirectError) setError(redirectError)
+  }, [])
 
   const validateAll = () => {
     const e1 = nameFieldError(firstName) || nameFieldError(lastName)

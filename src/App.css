@@ -629,7 +629,7 @@
 .moni-topnav__logo {
   display: block;
   height: auto;
-  width: auto;
+    width: auto;
   max-height: clamp(2.45rem, 6.2vw, 3.65rem);
   max-width: min(19rem, 100%);
   object-fit: contain;
@@ -700,7 +700,7 @@
   width: 2.45rem;
   height: 2.45rem;
   display: inline-flex;
-    flex-direction: column;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   gap: 4px;
@@ -1260,8 +1260,8 @@
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 0.2rem;
-  text-align: center;
-}
+    text-align: center;
+  }
 
 .moni-projection-chart__key li {
   display: flex;
@@ -1354,14 +1354,14 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
+    display: flex;
   flex-direction: column;
   gap: 0.35rem;
 }
 
 .moni-history-item {
   display: flex;
-  align-items: center;
+    align-items: center;
   justify-content: space-between;
   gap: 0.6rem;
   padding: 0.5rem 0.6rem;

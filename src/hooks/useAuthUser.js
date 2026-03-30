@@ -1,6 +1,7 @@
 import { getRedirectResult, onAuthStateChanged } from 'firebase/auth'
 import { useEffect, useState } from 'react'
 import { auth } from '../lib/firebase.js'
+import { storeRedirectAuthError } from '../lib/auth.js'
 
 export function useAuthUser() {
   const [user, setUser] = useState(null)
@@ -17,7 +18,10 @@ export function useAuthUser() {
 
     // Completar redirect de Google (no bloquear el listener: en StrictMode un await
     // previo impedía registrar onAuthStateChanged y la sesión parecía “perderse”).
-    void getRedirectResult(auth).catch((e) => console.error(e))
+    void getRedirectResult(auth).catch((e) => {
+      console.error(e)
+      storeRedirectAuthError(e)
+    })
 
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u)
