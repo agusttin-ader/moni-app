@@ -6,6 +6,7 @@ import {
 } from '../lib/formValidation.js'
 import {
   consumeRedirectAuthError,
+  isIOSStandalone,
   login,
   loginWithGoogle,
   register,
@@ -49,10 +50,12 @@ export function Login() {
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)
   const [registerOpen, setRegisterOpen] = useState(false)
+  const [iosStandalone, setIosStandalone] = useState(false)
 
   useEffect(() => {
     const redirectError = consumeRedirectAuthError()
     if (redirectError) setError(redirectError)
+    setIosStandalone(isIOSStandalone())
   }, [])
 
   const validateAll = () => {
@@ -173,11 +176,16 @@ export function Login() {
         type="button"
         className="moni-btn moni-btn--secondary moni-btn--with-icon moni-btn--block moni-login-google"
         onClick={onGoogle}
-        disabled={busy}
+        disabled={busy || iosStandalone}
       >
         <GoogleMark />
         <span>Continuar con Google</span>
       </button>
+      {iosStandalone ? (
+        <p className="moni-login-google-note" role="status">
+          Para Google, abrí Moni en Safari (no desde la app instalada).
+        </p>
+      ) : null}
 
       <div className="moni-login-sep" role="presentation">
         <span>¿No tenés cuenta?</span>

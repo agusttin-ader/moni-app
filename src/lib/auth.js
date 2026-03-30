@@ -58,20 +58,28 @@ export function consumeRedirectAuthError() {
 function shouldUseGoogleRedirect() {
   if (typeof window === 'undefined') return false
   const ua = window.navigator.userAgent || ''
-  // Android (y casi todo móvil): el popup suele bloquearse o quedar en blanco.
-  const isMobile =
-    /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(
-      ua,
-    ) ||
-    (navigator.maxTouchPoints > 1 &&
-      /Macintosh/.test(ua))
-  if (isMobile) return true
+  const isiOS =
+    /iPhone|iPad|iPod/i.test(ua) ||
+    (window.navigator.maxTouchPoints > 1 && /Macintosh/i.test(ua))
+  if (isiOS) return true
   const isSafari =
     /Safari/i.test(ua) &&
     !/Chromium|Chrome|Edg|CriOS|FxiOS|OPiOS|DuckDuckGo|GSA|YaBrowser/i.test(
       ua,
     )
   return isSafari
+}
+
+export function isIOSStandalone() {
+  if (typeof window === 'undefined') return false
+  const ua = window.navigator.userAgent || ''
+  const isiOS =
+    /iPhone|iPad|iPod/i.test(ua) ||
+    (window.navigator.maxTouchPoints > 1 && /Macintosh/i.test(ua))
+  const standalone =
+    window.matchMedia?.('(display-mode: standalone)')?.matches ||
+    window.navigator.standalone === true
+  return Boolean(isiOS && standalone)
 }
 
 export async function register(email, password) {
@@ -111,13 +119,37 @@ export async function logout() {
 export async function loginWithGoogle() {
   if (!auth) return { user: null, error: authUnavailableMessage() }
   try {
+    if (isIOSStandalone()) {
+      return {
+        user: null,
+        error:
+          'Google en la app instalada de iPhone no es compatible. Abrí Moni en Safari y tocá "Continuar con Google".',
+      }
+    }
+
     const provider = new GoogleAuthProvider()
+    provider.setCustomParameters({ prompt: 'select_account' })
+
     if (shouldUseGoogleRedirect()) {
       await signInWithRedirect(auth, provider)
       return { user: null, error: null }
     }
-    const credential = await signInWithPopup(auth, provider)
-    return { user: credential.user, error: null }
+
+    try {
+      const credential = await signInWithPopup(auth, provider)
+      return { user: credential.user, error: null }
+    } catch (error) {
+      const code = error?.code ?? ''
+      if (
+        code === 'auth/popup-blocked' ||
+        code === 'auth/cancelled-popup-request' ||
+        code === 'auth/operation-not-supported-in-this-environment'
+      ) {
+        await signInWithRedirect(auth, provider)
+        return { user: null, error: null }
+      }
+      throw error
+    }
   } catch (error) {
     return { user: null, error: mapAuthError(error, 'Error con Google') }
   }
