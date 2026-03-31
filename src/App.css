@@ -2613,11 +2613,31 @@
 }
 
 /* ——— Animations (dashboard enter) ——— */
-/* Solo movemos el contenido: si la animación no corre, no queda opacity:0 (pantalla “negra”). */
+/* Desktop / sin clase enter: solo un leve slide (sin fade a opacity 0 para no dejar pantalla negra). */
 .moni-anim-in {
   opacity: 1;
   animation: moni-fade-up 0.52s var(--moni-ease-smooth, cubic-bezier(0.22, 1, 0.36, 1))
     forwards;
+}
+
+.moni-layout__primary > .moni-anim-in:nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.moni-layout__primary > .moni-anim-in:nth-child(2) {
+  animation-delay: 120ms;
+}
+
+.moni-layout__aside > .moni-anim-in:nth-child(1) {
+  animation-delay: 80ms;
+}
+
+.moni-layout__aside > .moni-anim-in:nth-child(2) {
+  animation-delay: 140ms;
+}
+
+.moni-layout__aside > .moni-anim-in:nth-child(3) {
+  animation-delay: 200ms;
 }
 
 @keyframes moni-fade-up {
@@ -2629,10 +2649,110 @@
   }
 }
 
+@keyframes moni-app-shell-nav {
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes moni-app-shell-main {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes moni-app-shell-footer {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes moni-app-stagger-in {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Móvil o PWA instalada: entrada en capas (clase moni-app--enter desde Dashboard). */
+@media (prefers-reduced-motion: no-preference) {
+  .moni-app--enter > .moni-topnav {
+    animation: moni-app-shell-nav 0.62s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .moni-app--enter > .moni-main {
+    animation: moni-app-shell-main 0.56s cubic-bezier(0.22, 1, 0.36, 1) 0.07s both;
+  }
+
+  .moni-app--enter > .moni-app-footer {
+    animation: moni-app-shell-footer 0.58s cubic-bezier(0.22, 1, 0.36, 1) 0.22s both;
+  }
+
+  .moni-app--enter .moni-anim-in {
+    opacity: 0;
+    animation: moni-app-stagger-in 0.64s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .moni-app--enter .moni-layout__primary > .moni-anim-in:nth-child(1) {
+    animation-delay: 0.14s;
+  }
+
+  .moni-app--enter .moni-layout__primary > .moni-anim-in:nth-child(2) {
+    animation-delay: 0.3s;
+  }
+
+  .moni-app--enter .moni-layout__aside > .moni-anim-in:nth-child(1) {
+    animation-delay: 0.2s;
+  }
+
+  .moni-app--enter .moni-layout__aside > .moni-anim-in:nth-child(2) {
+    animation-delay: 0.36s;
+  }
+
+  .moni-app--enter .moni-layout__aside > .moni-anim-in:nth-child(3) {
+    animation-delay: 0.46s;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .moni-anim-in {
     animation: none;
     transform: none;
+  }
+
+  .moni-app--enter > .moni-topnav,
+  .moni-app--enter > .moni-main,
+  .moni-app--enter > .moni-app-footer {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .moni-app--enter .moni-anim-in {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
   }
 }
 
@@ -2694,6 +2814,272 @@
 
 html[data-moni-pwa] .moni-app-footer {
   display: none !important;
+}
+
+@keyframes moni-nav-drawer-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ——— App móvil (≤720px): controles más grandes, menú Moni, desplegables más suaves ——— */
+@media (max-width: 720px) {
+  .moni-app {
+    padding-left: clamp(0.65rem, 3.5vw, 1rem);
+    padding-right: clamp(0.65rem, 3.5vw, 1rem);
+    padding-bottom: clamp(1rem, 3.5vw, 1.35rem);
+  }
+
+  .moni-main {
+    padding-top: 0.55rem;
+  }
+
+  .moni-btn {
+    padding: 0.58rem 1rem;
+    font-size: 0.92rem;
+    min-height: 2.85rem;
+  }
+
+  .moni-btn--block {
+    min-height: 3rem;
+  }
+
+  .moni-btn--sm {
+    padding: 0.52rem 0.85rem;
+    font-size: 0.86rem;
+    min-height: 2.65rem;
+  }
+
+  .moni-btn--xs {
+    padding: 0.42rem 0.65rem;
+    font-size: 0.8rem;
+    min-height: 2.35rem;
+  }
+
+  .moni-input {
+    padding: 0.58rem 0.75rem;
+    font-size: 0.95rem;
+    min-height: 2.8rem;
+    border-radius: 12px;
+  }
+
+  .moni-input--month {
+    padding: 0.52rem 0.65rem;
+  }
+
+  .moni-field__label {
+    font-size: 0.78rem;
+  }
+
+  .moni-field {
+    gap: 0.3rem;
+  }
+
+  .moni-form-row {
+    gap: 0.5rem;
+  }
+
+  .moni-panel {
+    padding: 0.88rem 0.95rem 0.95rem;
+  }
+
+  .moni-panel__title {
+    font-size: 0.98rem;
+    margin-bottom: 0.58rem;
+  }
+
+  .moni-list__item {
+    padding: 0.55rem 0.62rem;
+  }
+
+  .moni-list__name {
+    font-size: 0.9rem;
+  }
+
+  .moni-list__meta {
+    font-size: 0.8rem;
+  }
+
+  .moni-action-btn {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .moni-action-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .moni-empty {
+    font-size: 0.84rem;
+  }
+
+  .moni-collapse__trigger {
+    padding: 0.7rem 0.75rem;
+    font-size: 0.9rem;
+    min-height: 3rem;
+    border-radius: 12px;
+    transition:
+      background 0.26s ease,
+      border-color 0.26s ease,
+      box-shadow 0.26s ease;
+  }
+
+  .moni-collapse__trigger:active {
+    box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  .moni-projection-item {
+    padding: 0.7rem 0.78rem;
+  }
+
+  .moni-projection-item__title {
+    font-size: 0.95rem;
+  }
+
+  .moni-projection-item__hint {
+    font-size: 0.76rem;
+  }
+
+  .moni-projection-item__meta {
+    font-size: 0.8rem;
+    padding-inline: 0.78rem;
+    padding-bottom: 0.62rem;
+  }
+
+  .moni-card {
+    padding: 1.05rem 1.08rem;
+  }
+
+  .moni-card__title {
+    font-size: 1.02rem;
+  }
+
+  .moni-card__sub {
+    font-size: 0.84rem;
+  }
+
+  .moni-mini-metrics__label {
+    font-size: 0.72rem;
+  }
+
+  .moni-mini-metrics__value {
+    font-size: 1.05rem;
+  }
+
+  .moni-alert {
+    padding: 0.78rem 0.88rem;
+  }
+
+  .moni-alert__text {
+    font-size: 0.95rem;
+  }
+
+  .moni-topnav__menu-btn {
+    position: relative;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 14px;
+    border: 1px solid rgba(94, 228, 214, 0.45);
+    background: linear-gradient(
+      150deg,
+      rgba(94, 228, 214, 0.14),
+      rgba(139, 92, 246, 0.12)
+    );
+    box-shadow:
+      0 2px 16px rgba(0, 0, 0, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    gap: 5px;
+    transition:
+      background 0.28s ease,
+      border-color 0.28s ease,
+      box-shadow 0.28s ease,
+      transform 0.2s ease;
+  }
+
+  .moni-topnav__menu-btn span {
+    width: 1.2rem;
+    height: 2.5px;
+    border-radius: 99px;
+    background: linear-gradient(90deg, #5ee4d6, #c4b5fd);
+    opacity: 1;
+    transition:
+      transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 0.3s ease;
+  }
+
+  .moni-topnav__menu-btn.is-open span:nth-child(1) {
+    transform: translateY(7.5px) rotate(45deg);
+  }
+
+  .moni-topnav__menu-btn.is-open span:nth-child(2) {
+    opacity: 0;
+    transform: scaleX(0.15);
+  }
+
+  .moni-topnav__menu-btn.is-open span:nth-child(3) {
+    transform: translateY(-7.5px) rotate(-45deg);
+  }
+
+  .moni-topnav__menu-btn:hover {
+    border-color: rgba(196, 181, 253, 0.55);
+    background: linear-gradient(
+      150deg,
+      rgba(94, 228, 214, 0.2),
+      rgba(139, 92, 246, 0.17)
+    );
+  }
+
+  .moni-topnav__drawer {
+    width: min(260px, calc(100vw - 2rem));
+    padding: 0.45rem;
+    border-radius: 14px;
+  }
+
+  .moni-topnav__drawer.is-open {
+    animation: moni-nav-drawer-in 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .moni-topnav__drawer-item {
+    padding: 0.72rem 0.85rem;
+    font-size: 0.92rem;
+    border-radius: 12px;
+  }
+
+  .moni-topnav .moni-avatar {
+    width: 2.35rem;
+    height: 2.35rem;
+  }
+}
+
+@media (max-width: 720px) and (prefers-reduced-motion: no-preference) {
+  .moni-collapse__inner {
+    transition: grid-template-rows 0.62s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .moni-collapse__icon {
+    transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .moni-projection-item__chev {
+    transition: transform 0.52s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .moni-projection-item__drawer {
+    transition: grid-template-rows 0.58s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+@media (max-width: 720px) and (prefers-reduced-motion: reduce) {
+  .moni-topnav__drawer.is-open {
+    animation: none;
+  }
 }
 
 /* ——— Error boundary ——— */

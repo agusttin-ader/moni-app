@@ -94,7 +94,7 @@ export function Header({ user, profile, onLogout, onOpenProfile, onOpenHistory }
 
           <button
             type="button"
-            className="moni-topnav__menu-btn"
+            className={`moni-topnav__menu-btn${menuOpen ? ' is-open' : ''}`}
             aria-expanded={menuOpen}
             aria-controls="moni-dashboard-menu"
             aria-label="Más opciones"

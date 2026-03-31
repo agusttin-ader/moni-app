@@ -21,10 +21,31 @@ const ProjectionHistoryPanel = lazy(() =>
 )
 const DashboardInsightsLazy = lazy(() => import('./DashboardInsightsLazy.jsx'))
 
+function shouldPlayMobileAppEnter() {
+  if (typeof window === 'undefined') return false
+  try {
+    const narrow = window.matchMedia('(max-width: 720px)').matches
+    const nav = window.navigator
+    const iosStandalone =
+      'standalone' in nav &&
+      /** @type {Navigator & { standalone?: boolean }} */ (nav).standalone ===
+        true
+    const standalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.matchMedia('(display-mode: fullscreen)').matches ||
+      iosStandalone
+    return narrow || standalone
+  } catch {
+    return false
+  }
+}
+
 export function Dashboard({ state, dispatch, user, onLogout }) {
   const { remaining } = computeMonthBalance(state, 0)
   const [profileOpen, setProfileOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
+  /** Entrada suave en móvil o app instalada (solo presentación). */
+  const [mobileAppEnter] = useState(() => shouldPlayMobileAppEnter())
 
   const onOpenProfile = useCallback(() => setProfileOpen(true), [])
   const onCloseProfile = useCallback(() => setProfileOpen(false), [])
@@ -46,7 +67,9 @@ export function Dashboard({ state, dispatch, user, onLogout }) {
   } = useProjectionHistory(user, state)
 
   return (
-    <div className="moni-app">
+    <div
+      className={`moni-app${mobileAppEnter ? ' moni-app--enter' : ''}`.trim()}
+    >
       <Header
         user={user}
         profile={profile}
@@ -84,7 +107,7 @@ export function Dashboard({ state, dispatch, user, onLogout }) {
       <main className="moni-main">
         <div className="moni-layout">
           <div className="moni-layout__primary">
-            <div className="moni-anim-in" style={{ animationDelay: '0ms' }}>
+            <div className="moni-anim-in">
               <section className="moni-dashboard-overview">
                 <div className="moni-dashboard-overview__hero">
                   <CurrentMonthHero remaining={remaining} />
@@ -95,7 +118,7 @@ export function Dashboard({ state, dispatch, user, onLogout }) {
                 </div>
               </section>
             </div>
-            <div className="moni-anim-in" style={{ animationDelay: '120ms' }}>
+            <div className="moni-anim-in">
               <section className="moni-dashboard-insights">
                 <Suspense
                   fallback={
@@ -112,13 +135,13 @@ export function Dashboard({ state, dispatch, user, onLogout }) {
           </div>
 
           <aside className="moni-layout__aside" id="listas">
-            <div className="moni-anim-in" style={{ animationDelay: '80ms' }}>
+            <div className="moni-anim-in">
               <IncomesPanel items={state.ingresos} dispatch={dispatch} />
             </div>
-            <div className="moni-anim-in" style={{ animationDelay: '140ms' }}>
+            <div className="moni-anim-in">
               <ExpensesPanel items={state.gastos} dispatch={dispatch} />
             </div>
-            <div className="moni-anim-in" style={{ animationDelay: '200ms' }}>
+            <div className="moni-anim-in">
               <DebtsPanel items={state.deudas} dispatch={dispatch} />
             </div>
           </aside>
