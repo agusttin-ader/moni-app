@@ -105,10 +105,10 @@ export function OnboardingWizard({ dispatch, onLogout }) {
 
         {step === 0 ? (
           <>
-            <h1 className="moni-onboarding__title">Empecemos con lo esencial</h1>
+            <h1 className="moni-onboarding__title">Armemos tu punto de partida</h1>
             <p className="moni-onboarding__lead">
-              En dos minutos cargás un ingreso mensual y un gasto fijo. Después
-              vas a ver tu saldo y proyección con datos reales.
+              En dos minutos cargás tu base financiera. Después vas a poder proyectar una meta real
+              y entender si llegás o qué deberías priorizar.
             </p>
           </>
         ) : null}
@@ -117,8 +117,7 @@ export function OnboardingWizard({ dispatch, onLogout }) {
           <>
             <h1 className="moni-onboarding__title">Tu ingreso principal</h1>
             <p className="moni-onboarding__lead">
-              Sueldo u otro ingreso que recibís todos los meses (podés editar
-              esto después).
+              Este dato define tu margen mensual inicial y le da contexto a la proyección.
             </p>
             <label className="moni-field moni-onboarding__field">
               <span className="moni-field__label">Concepto</span>
@@ -147,8 +146,8 @@ export function OnboardingWizard({ dispatch, onLogout }) {
           <>
             <h1 className="moni-onboarding__title">Un gasto fijo</h1>
             <p className="moni-onboarding__lead">
-              Algo que pagás todos los meses por un monto similar (alquiler,
-              servicio, préstamo sin cuotas en la app).
+              Este gasto representa uno de tus compromisos base. Después vas a poder sumar cuotas,
+              gastos diarios y una meta concreta con fecha.
             </p>
             <label className="moni-field moni-onboarding__field">
               <span className="moni-field__label">Concepto</span>

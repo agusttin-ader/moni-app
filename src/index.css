@@ -1,25 +1,25 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
   color-scheme: dark;
-  --eth-bg-deep: #0b0c12;
-  --eth-bg-mid: #121422;
-  --eth-surface: rgba(255, 255, 255, 0.06);
-  --eth-border: rgba(255, 255, 255, 0.12);
-  --eth-text: rgba(245, 245, 250, 0.92);
-  --eth-muted: rgba(220, 220, 235, 0.62);
-  --eth-teal: #5ee4d6;
-  --eth-teal-dim: rgba(94, 228, 214, 0.22);
-  --eth-violet: #8b5cf6;
-  --eth-violet-dim: rgba(139, 92, 246, 0.28);
+  --eth-bg-deep: #0d0820;
+  --eth-bg-mid: #171130;
+  --eth-surface: rgba(255, 255, 255, 0.055);
+  --eth-border: rgba(182, 173, 255, 0.18);
+  --eth-text: rgba(248, 249, 255, 0.97);
+  --eth-muted: rgba(205, 206, 232, 0.7);
+  --eth-teal: #83e6db;
+  --eth-teal-dim: rgba(131, 230, 219, 0.18);
+  --eth-violet: #8f79ff;
+  --eth-violet-dim: rgba(143, 121, 255, 0.18);
   --eth-danger: #fb7185;
-  --eth-success: #4ade80;
-  --eth-warning: #fbbf24;
-  --eth-radius-lg: 22px;
-  --eth-radius-md: 16px;
-  --eth-radius-sm: 12px;
-  --eth-shadow: 0 26px 70px rgba(0, 0, 0, 0.45);
-  --eth-font: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --eth-success: #34d399;
+  --eth-warning: #f59e0b;
+  --eth-radius-lg: 28px;
+  --eth-radius-md: 20px;
+  --eth-radius-sm: 14px;
+  --eth-shadow: 0 28px 80px rgba(2, 8, 23, 0.42);
+  --eth-font: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --moni-ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
   --moni-ease-out-soft: cubic-bezier(0.33, 1, 0.68, 1);
   --moni-app-enter-ease: cubic-bezier(0.16, 1, 0.3, 1);
@@ -70,8 +70,8 @@ body {
   font-family: var(--eth-font);
   color: var(--eth-text);
   background:
-    radial-gradient(1200px 800px at 10% -10%, rgba(94, 228, 214, 0.14), transparent),
-    radial-gradient(900px 700px at 90% 0%, rgba(139, 92, 246, 0.22), transparent),
+    radial-gradient(1200px 800px at 12% -8%, rgba(131, 230, 219, 0.14), transparent),
+    radial-gradient(1000px 700px at 88% 0%, rgba(143, 121, 255, 0.24), transparent),
     linear-gradient(180deg, var(--eth-bg-mid), var(--eth-bg-deep));
   -webkit-font-smoothing: antialiased;
 }

@@ -141,6 +141,423 @@ export function totalDailyExpensesForMonthKey(gastosDiarios, yearMonth) {
   }, 0)
 }
 
+export function totalBudgetLimit(budgets) {
+  return (budgets ?? []).reduce(
+    (sum, item) => sum + Math.max(0, Number(item?.monthlyLimit) || 0),
+    0,
+  )
+}
+
+function variableSpendByCategoryForMonthKey(gastosDiarios, yearMonth) {
+  const out = new Map()
+  for (const item of gastosDiarios ?? []) {
+    if (!item || typeof item !== 'object') continue
+    if (String(item.date ?? '').slice(0, 7) !== yearMonth) continue
+    const amount = Math.max(0, Number(item.amount) || 0)
+    if (amount <= 0) continue
+    const categoryId = String(item.categoryId ?? 'other')
+    out.set(categoryId, (out.get(categoryId) ?? 0) + amount)
+  }
+  return out
+}
+
+function recentVariableMonthTotals(gastosDiarios) {
+  const monthMap = new Map()
+  for (const item of gastosDiarios ?? []) {
+    if (!item || typeof item !== 'object') continue
+    const ym = String(item.date ?? '').slice(0, 7)
+    if (!/^\d{4}-\d{2}$/.test(ym)) continue
+    const amount = Math.max(0, Number(item.amount) || 0)
+    if (amount <= 0) continue
+    monthMap.set(ym, (monthMap.get(ym) ?? 0) + amount)
+  }
+  return [...monthMap.entries()].sort((a, b) => a[0].localeCompare(b[0]))
+}
+
+export function averageVariableExpenses(gastosDiarios, sampleSize = 3) {
+  const series = recentVariableMonthTotals(gastosDiarios)
+  if (!series.length) return 0
+  const recent = series.slice(-Math.max(1, sampleSize))
+  const total = recent.reduce((sum, [, amount]) => sum + amount, 0)
+  return total / recent.length
+}
+
+export function projectedVariableExpensesInfo(state, monthOffset) {
+  const ym = monthKeyForOffset(monthOffset)
+  const actual = ym ? totalDailyExpensesForMonthKey(state?.gastosDiarios, ym) : 0
+  if (monthOffset <= 0) return { amount: actual, source: 'actual' }
+  if (actual > 0) return { amount: actual, source: 'planned' }
+  const budgetLimit = totalBudgetLimit(state?.budgets)
+  if (budgetLimit > 0) return { amount: budgetLimit, source: 'budget' }
+  const average = averageVariableExpenses(state?.gastosDiarios, 3)
+  if (average > 0) return { amount: average, source: 'average' }
+  return { amount: 0, source: 'none' }
+}
+
+export function projectedVariableSourceLabel(source) {
+  switch (source) {
+    case 'actual':
+      return 'real'
+    case 'planned':
+      return 'cargado'
+    case 'budget':
+      return 'presupuesto'
+    case 'average':
+      return 'promedio'
+    default:
+      return 'sin referencia'
+  }
+}
+
+function daysRemainingInMonth(date = new Date()) {
+  const year = date.getFullYear()
+  const month = date.getMonth()
+  const lastDay = new Date(year, month + 1, 0).getDate()
+  return Math.max(1, lastDay - date.getDate() + 1)
+}
+
+export function budgetProgressRows(state, yearMonth = currentYearMonthString()) {
+  const spentByCategory = variableSpendByCategoryForMonthKey(
+    state?.gastosDiarios,
+    yearMonth,
+  )
+  const daysLeft = daysRemainingInMonth()
+  return (state?.budgets ?? [])
+    .map((budget) => {
+      const categoryId = String(budget?.categoryId ?? 'other')
+      const limit = Math.max(0, Number(budget?.monthlyLimit) || 0)
+      const spent = spentByCategory.get(categoryId) ?? 0
+      const remaining = limit - spent
+      const ratio = limit > 0 ? spent / limit : 0
+      const category = expenseCategoryById(categoryId)
+      return {
+        id: String(budget?.id ?? categoryId),
+        categoryId,
+        label: category.label,
+        short: category.short,
+        emoji: category.emoji,
+        limit,
+        spent,
+        remaining,
+        ratio,
+        progress: Math.max(0, Math.min(1.25, ratio)),
+        safeToSpend: daysLeft > 0 ? remaining / daysLeft : remaining,
+        tone:
+          ratio >= 1 ? 'danger' : ratio >= 0.85 ? 'warning' : 'healthy',
+      }
+    })
+    .sort((a, b) => {
+      if (b.ratio !== a.ratio) return b.ratio - a.ratio
+      return b.limit - a.limit
+    })
+}
+
+export function budgetOverviewModel(state) {
+  const rows = budgetProgressRows(state)
+  const totalLimit = rows.reduce((sum, row) => sum + row.limit, 0)
+  const totalSpent = rows.reduce((sum, row) => sum + row.spent, 0)
+  const remaining = totalLimit - totalSpent
+  const daysLeft = daysRemainingInMonth()
+  const safeToSpend = daysLeft > 0 ? remaining / daysLeft : remaining
+  const alertRow =
+    rows.find((row) => row.ratio >= 1) ??
+    rows.find((row) => row.ratio >= 0.85) ??
+    rows[0] ??
+    null
+  return {
+    rows,
+    totalLimit,
+    totalSpent,
+    remaining,
+    daysLeft,
+    safeToSpend,
+    usageRatio: totalLimit > 0 ? totalSpent / totalLimit : 0,
+    alertRow,
+    hasBudget: totalLimit > 0,
+  }
+}
+
+const GOAL_PRIORITY_SCORE = {
+  high: 3,
+  medium: 2,
+  low: 1,
+}
+
+export function goalMonthsUntil(targetMonth, fromYearMonth = currentYearMonthString()) {
+  const base = yearMonthToIndex(normalizeStartMonth(fromYearMonth))
+  const target = yearMonthToIndex(normalizeStartMonth(targetMonth))
+  if (base == null || target == null) return 1
+  return Math.max(1, target - base + 1)
+}
+
+function sortGoals(goals) {
+  return [...(goals ?? [])].sort((a, b) => {
+    const pa = GOAL_PRIORITY_SCORE[String(a?.priority ?? 'medium')] ?? 2
+    const pb = GOAL_PRIORITY_SCORE[String(b?.priority ?? 'medium')] ?? 2
+    if (pb !== pa) return pb - pa
+    const ta = yearMonthToIndex(normalizeStartMonth(a?.targetMonth))
+    const tb = yearMonthToIndex(normalizeStartMonth(b?.targetMonth))
+    if (ta != null && tb != null && ta !== tb) return ta - tb
+    return String(a?.title ?? '').localeCompare(String(b?.title ?? ''))
+  })
+}
+
+export function activeGoalModel(state) {
+  const active = sortGoals(state?.goals)[0]
+  if (!active) return null
+  const monthsLeft = goalMonthsUntil(active.targetMonth)
+  const targetAmount = Math.max(0, Number(active.targetAmount) || 0)
+  const savedAmount = Math.max(0, Number(active.savedAmount) || 0)
+  const remainingNeeded = Math.max(0, targetAmount - savedAmount)
+  let projectedContribution = 0
+  const balanceSeries = []
+  for (let i = 0; i < monthsLeft; i++) {
+    const balance = computeMonthBalance(state, i).remaining
+    const contribution = Math.max(0, balance)
+    projectedContribution += contribution
+    balanceSeries.push({
+      monthOffset: i,
+      monthKey: monthKeyForOffset(i),
+      balance,
+      contribution,
+    })
+  }
+  const projectedByTarget = savedAmount + projectedContribution
+  const shortfall = Math.max(0, targetAmount - projectedByTarget)
+  const requiredPerMonth = monthsLeft > 0 ? remainingNeeded / monthsLeft : remainingNeeded
+  const projectedPerMonth = monthsLeft > 0 ? projectedContribution / monthsLeft : projectedContribution
+  const progress = targetAmount > 0 ? Math.min(1, savedAmount / targetAmount) : 0
+  const viability =
+    shortfall <= 0 ? 'viable' : projectedPerMonth >= requiredPerMonth * 0.82 ? 'tight' : 'at_risk'
+  return {
+    ...active,
+    monthsLeft,
+    targetAmount,
+    savedAmount,
+    remainingNeeded,
+    projectedContribution,
+    projectedByTarget,
+    shortfall,
+    requiredPerMonth,
+    projectedPerMonth,
+    progress,
+    viability,
+    balanceSeries,
+  }
+}
+
+export function goalCategoryLabel(category) {
+  switch (String(category ?? 'other')) {
+    case 'relocation':
+      return 'Mudanza'
+    case 'emergency':
+      return 'Fondo de emergencia'
+    case 'travel':
+      return 'Viaje'
+    case 'education':
+      return 'Formación'
+    case 'home':
+      return 'Hogar'
+    default:
+      return 'Meta personal'
+  }
+}
+
+export function goalAdviceItems(state) {
+  const goal = activeGoalModel(state)
+  if (!goal) return []
+
+  const items = []
+  const overview = budgetOverviewModel(state)
+  const current = computeMonthBalance(state, 0)
+  const fixedShare = current.incomes > 0 ? (current.fixed + current.debts) / current.incomes : 0
+  const topDebt = [...(state?.deudas ?? [])]
+    .filter((item) => !debtIsFinished(item))
+    .sort((a, b) => monthlyInstallmentAmount(b) - monthlyInstallmentAmount(a))[0]
+  const stressedCategory = overview.rows.find((row) => row.ratio >= 0.9) ?? overview.rows[0]
+
+  if (goal.shortfall > 0) {
+    items.push({
+      id: 'goal-gap',
+      tone: goal.viability === 'tight' ? 'warning' : 'danger',
+      title: 'Te falta liberar margen mensual',
+      priority: 100,
+      monthlyGap: Math.max(0, goal.requiredPerMonth - goal.projectedPerMonth),
+      shortfall: goal.shortfall,
+    })
+  } else {
+    items.push({
+      id: 'goal-track',
+      tone: 'positive',
+      title: 'La meta es viable con tu escenario actual',
+      priority: 95,
+      reservePerMonth: goal.requiredPerMonth,
+    })
+  }
+
+  if (stressedCategory && overview.hasBudget) {
+    items.push({
+      id: 'category-pressure',
+      tone: stressedCategory.ratio >= 1 ? 'danger' : 'warning',
+      title: 'Tu gasto flexible necesita foco',
+      priority: stressedCategory.ratio >= 1 ? 90 : 72,
+      categoryLabel: stressedCategory.label,
+      categoryEmoji: stressedCategory.emoji,
+      categorySpent: stressedCategory.spent,
+      categoryLimit: stressedCategory.limit,
+      categoryRemaining: stressedCategory.remaining,
+    })
+  } else if (!overview.hasBudget) {
+    items.push({
+      id: 'setup-budget',
+      tone: 'neutral',
+      title: 'Todavía te falta una referencia mensual',
+      priority: 65,
+    })
+  }
+
+  if (topDebt) {
+    items.push({
+      id: 'debt-pressure',
+      tone: 'warning',
+      title: 'Hay una cuota que pesa más que el resto',
+      priority: 78,
+      debtName: String(topDebt.name ?? 'Cuota'),
+      debtMonthly: monthlyInstallmentAmount(topDebt),
+    })
+  }
+
+  const discretionaryKeywords = [
+    'netflix',
+    'spotify',
+    'disney',
+    'hbo',
+    'prime',
+    'youtube',
+    'icloud',
+    'game pass',
+    'suscrip',
+  ]
+  const optionalServices = (state?.gastos ?? [])
+    .map((expense) => ({
+      name: String(expense?.name ?? '').trim(),
+      amount: Math.max(0, Number(expense?.amount) || 0),
+    }))
+    .filter(
+      (expense) =>
+        expense.amount > 0 &&
+        discretionaryKeywords.some((keyword) =>
+          expense.name.toLowerCase().includes(keyword),
+        ),
+    )
+  const optionalServicesTotal = optionalServices.reduce(
+    (sum, expense) => sum + expense.amount,
+    0,
+  )
+  if (optionalServicesTotal > 0) {
+    items.push({
+      id: 'optional-services',
+      tone: goal.shortfall > 0 ? 'warning' : 'neutral',
+      title: 'Tenés servicios que podrían recortarse',
+      priority: goal.shortfall > 0 ? 76 : 52,
+      optionalServicesTotal,
+      optionalServices: optionalServices.slice(0, 3).map((item) => item.name),
+    })
+  }
+
+  if (fixedShare >= 0.72) {
+    items.push({
+      id: 'fixed-load',
+      tone: 'warning',
+      title: 'Tus compromisos fijos consumen gran parte del ingreso',
+      priority: 70,
+      fixedShare,
+    })
+  } else if (current.remaining > 0) {
+    items.push({
+      id: 'save-now',
+      tone: 'positive',
+      title: 'Podés separar ahorro desde este mes',
+      priority: 60,
+      reservePerMonth: Math.min(current.remaining, goal.requiredPerMonth || current.remaining),
+    })
+  }
+
+  return items.sort((a, b) => b.priority - a.priority).slice(0, 4)
+}
+
+export function goalAdviceSummary(goal, items, formatMoneyFn) {
+  if (!goal) {
+    return 'Definí una meta concreta para que MONI te ayude a priorizar y proyectar.'
+  }
+  const lead =
+    goal.viability === 'viable'
+      ? `Tu meta ${goal.title} se ve alcanzable en ${goal.monthsLeft} meses.`
+      : goal.viability === 'tight'
+        ? `Tu meta ${goal.title} está cerca, pero necesita más disciplina mensual.`
+        : `Con tu escenario actual, ${goal.title} no llega cómodo al plazo que elegiste.`
+  const first = items[0]
+  if (!first) return lead
+  switch (first.id) {
+    case 'goal-gap':
+      return `${lead} Hoy necesitás liberar alrededor de ${formatMoneyFn(first.monthlyGap)} por mes para cerrar la brecha.`
+    case 'goal-track':
+      return `${lead} Si reservás ${formatMoneyFn(first.reservePerMonth)} por mes, mantenés el plan bajo control.`
+    case 'category-pressure':
+      return `${lead} La categoría ${first.categoryLabel} es la que más tensión le mete a tu objetivo.`
+    case 'optional-services':
+      return `${lead} Revisar servicios opcionales puede liberar hasta ${formatMoneyFn(first.optionalServicesTotal)} por mes para tu meta.`
+    default:
+      return lead
+  }
+}
+
+export function goalMotivationMessage(goal, items) {
+  if (!goal) {
+    return 'Tu próxima gran decisión financiera empieza cuando definís una meta clara.'
+  }
+  if (goal.viability === 'viable') {
+    return 'Tu plan ya funciona: cada peso que priorizás hoy acelera el proyecto que más te importa.'
+  }
+  if (items.some((item) => item.id === 'goal-gap')) {
+    return 'Decirle que no a un gasto impulsivo hoy puede acercarte un mes entero a tu meta.'
+  }
+  if (items.some((item) => item.id === 'optional-services')) {
+    return 'Recortar lo que no suma valor real es una forma concreta de invertir en tu futuro.'
+  }
+  return 'La constancia pesa más que la perfección: pequeñas decisiones repetidas cambian el resultado.'
+}
+
+export function variableCategorySpendingRows(state, yearMonth = currentYearMonthString()) {
+  const spentByCategory = variableSpendByCategoryForMonthKey(
+    state?.gastosDiarios,
+    yearMonth,
+  )
+  const budgetByCategory = new Map(
+    (state?.budgets ?? []).map((item) => [
+      String(item?.categoryId ?? 'other'),
+      Math.max(0, Number(item?.monthlyLimit) || 0),
+    ]),
+  )
+  const totalSpent = [...spentByCategory.values()].reduce((sum, value) => sum + value, 0)
+  return [...spentByCategory.entries()]
+    .map(([categoryId, spent]) => {
+      const category = expenseCategoryById(categoryId)
+      const limit = budgetByCategory.get(categoryId) ?? 0
+      return {
+        categoryId,
+        label: category.label,
+        short: category.short,
+        emoji: category.emoji,
+        spent,
+        limit,
+        share: totalSpent > 0 ? spent / totalSpent : 0,
+        ratio: limit > 0 ? spent / limit : 0,
+      }
+    })
+    .sort((a, b) => b.spent - a.spent)
+}
+
 export function computeMonthBalance(state, monthOffset) {
   const base = yearMonthToIndex(currentYearMonthString())
   if (base == null) {
@@ -150,10 +567,10 @@ export function computeMonthBalance(state, monthOffset) {
   const incomes = totalMonthlyIncome(state?.ingresos, targetIdx)
   const fixed = totalFixedExpenses(state?.gastos)
   const debts = totalDebtPaymentsForMonth(state?.deudas, monthOffset)
-  const ym = monthKeyForOffset(monthOffset)
-  const daily = ym ? totalDailyExpensesForMonthKey(state?.gastosDiarios, ym) : 0
+  const variable = projectedVariableExpensesInfo(state, monthOffset)
+  const daily = variable.amount
   const remaining = incomes - fixed - debts - daily
-  return { incomes, fixed, debts, daily, remaining }
+  return { incomes, fixed, debts, daily, dailySource: variable.source, remaining }
 }
 
 const PROJECTION_KEYS = ['actual', 'siguiente', 'siguiente+1']
@@ -241,6 +658,7 @@ export function projectionDetailRows(state, count = PROJECTION_HORIZON_MONTHS) {
       fixed: b.fixed,
       debts: b.debts,
       daily: b.daily,
+      dailySource: b.dailySource ?? 'actual',
       flowWeight: 0,
     })
   }
@@ -290,6 +708,40 @@ export function buildCurrentMonthHeroView(remaining, formatMoneyFn) {
         : model.tone === 'negative'
           ? 'Revisá gastos o ingresos para equilibrar.'
           : 'Ingresos y egresos se compensan.',
+  }
+}
+
+export function currentMonthHeroMeta(state, formatMoneyFn) {
+  const goal = activeGoalModel(state)
+  if (goal) {
+    return {
+      label: goal.viability === 'viable' ? 'Meta activa' : 'Meta bajo presión',
+      value: formatMoneyFn(goal.requiredPerMonth),
+      tone:
+        goal.viability === 'viable'
+          ? 'positive'
+          : goal.viability === 'tight'
+            ? 'warning'
+            : 'negative',
+    }
+  }
+  const budget = budgetOverviewModel(state)
+  if (!budget.hasBudget) {
+    return {
+      label: 'Variables del mes',
+      value: formatMoneyFn(computeMonthBalance(state, 0).daily),
+      tone: 'neutral',
+    }
+  }
+  return {
+    label: 'Presupuesto flexible',
+    value: formatMoneyFn(budget.remaining),
+    tone:
+      budget.remaining < 0
+        ? 'negative'
+        : budget.usageRatio >= 0.85
+          ? 'warning'
+          : 'positive',
   }
 }
 

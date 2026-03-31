@@ -1,14 +1,18 @@
 import { lazy, Suspense, useCallback, useState } from 'react'
 import { UnifiedExpenseSheet } from './UnifiedExpenseSheet.jsx'
 import { computeMonthBalance } from '../lib/calculations.js'
+import { BudgetHealthCard } from './BudgetHealthCard.jsx'
 import { CurrentMonthHero } from './CurrentMonthHero.jsx'
 import { DebtsPanel } from './DebtsPanel.jsx'
 import { GastosPanel } from './GastosPanel.jsx'
 import { AppFooter } from './AppFooter.jsx'
+import { BudgetPlannerPanel } from './BudgetPlannerPanel.jsx'
+import { GoalAdviceCard } from './GoalAdviceCard.jsx'
+import { GoalActiveCard } from './GoalActiveCard.jsx'
+import { GoalPlannerPanel } from './GoalPlannerPanel.jsx'
 import { Header } from './Header.jsx'
 import { IncomesPanel } from './IncomesPanel.jsx'
 import { MiniMetrics } from './MiniMetrics.jsx'
-import { ProjectionAlert } from './ProjectionAlert.jsx'
 import { useUserProfile } from '../hooks/useUserProfile.js'
 import { useProjectionHistory } from '../hooks/useProjectionHistory.js'
 
@@ -43,6 +47,7 @@ function shouldPlayInstalledAppEnter() {
 
 export function Dashboard({ state, dispatch, user, onLogout }) {
   const { remaining } = computeMonthBalance(state, 0)
+  const [activeView, setActiveView] = useState('home')
   const [profileOpen, setProfileOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   /** Entrada suave al abrir la app descargada / instalada (solo presentación). */
@@ -88,6 +93,9 @@ export function Dashboard({ state, dispatch, user, onLogout }) {
         onLogout={onLogout}
         onOpenProfile={onOpenProfile}
         onOpenHistory={onOpenHistory}
+        activeView={activeView}
+        onChangeView={setActiveView}
+        onQuickAdd={openUnified}
       />
       {profileOpen ? (
         <Suspense fallback={null}>
@@ -117,59 +125,142 @@ export function Dashboard({ state, dispatch, user, onLogout }) {
         </Suspense>
       ) : null}
       <main className="moni-main">
-        <div className="moni-layout">
-          <div className="moni-layout__main">
-            <div className="moni-anim-in moni-layout__main-block moni-layout__main-block--overview">
-              <section className="moni-dashboard-overview">
-                <div className="moni-dashboard-overview__hero">
-                  <CurrentMonthHero remaining={remaining} />
-                </div>
-                <div className="moni-dashboard-overview__side">
-                  <MiniMetrics state={state} />
-                  <ProjectionAlert state={state} />
-                </div>
-              </section>
-            </div>
-            <div className="moni-anim-in moni-layout__main-block moni-layout__main-block--insights">
-              <section className="moni-dashboard-insights">
-                <Suspense
-                  fallback={
-                    <div
-                      className="moni-dashboard-insights-skel"
-                      aria-hidden
-                    />
-                  }
-                >
-                  <DashboardInsightsLazy state={state} />
-                </Suspense>
-              </section>
+        {activeView === 'home' ? (
+          <div className="moni-layout moni-layout--home">
+            <div className="moni-layout__main">
+              <div className="moni-anim-in moni-layout__main-block moni-layout__main-block--overview">
+                <section className="moni-dashboard-overview">
+                  <div className="moni-dashboard-overview__hero">
+                    <CurrentMonthHero state={state} remaining={remaining} />
+                    <GoalActiveCard state={state} />
+                  </div>
+                  <div className="moni-dashboard-overview__side">
+                    <GoalAdviceCard state={state} />
+                    <MiniMetrics state={state} />
+                    <BudgetHealthCard state={state} />
+                  </div>
+                </section>
+              </div>
+              <div className="moni-anim-in moni-layout__main-block moni-layout__main-block--insights">
+                <section className="moni-dashboard-insights">
+                  <Suspense
+                    fallback={
+                      <div
+                        className="moni-dashboard-insights-skel"
+                        aria-hidden
+                      />
+                    }
+                  >
+                    <DashboardInsightsLazy state={state} />
+                  </Suspense>
+                </section>
+              </div>
             </div>
           </div>
-          <aside className="moni-layout__aside" id="listas">
-            <div className="moni-anim-in">
-              <IncomesPanel
-                items={state.ingresos}
-                dispatch={dispatch}
-                expandFormSignal={0}
-              />
+        ) : (
+          <section className="moni-planning" id="listas" aria-label="Planificación financiera">
+            <header className="moni-planning__intro moni-anim-in">
+              <p className="moni-planning__intro-kicker">Tu plan en Moni</p>
+              <h2 className="moni-planning__intro-title">Planificación</h2>
+              <p className="moni-planning__intro-lead">
+                Seguí los pasos en orden. Cuando termines, volvé a <strong>Inicio</strong> para ver el resumen
+                sin pantallas de carga.
+              </p>
+            </header>
+
+            <div className="moni-planning__group moni-anim-in" id="moni-planning-objetivos">
+              <div className="moni-planning__group-head">
+                <div className="moni-planning__group-titles">
+                  <p className="moni-planning__group-kicker">Paso 1 de 4</p>
+                  <h3 className="moni-planning__group-title">Meta y límites por categoría</h3>
+                  <p className="moni-planning__group-hint">
+                    Objetivo claro y tope mensual por rubro para que el resto del plan tenga sentido.
+                  </p>
+                </div>
+              </div>
+              <div className="moni-planning__group-panels moni-planning__group-panels--pair">
+                <div className="moni-planning__panel">
+                  <GoalPlannerPanel state={state} dispatch={dispatch} />
+                </div>
+                <div className="moni-planning__panel">
+                  <BudgetPlannerPanel state={state} dispatch={dispatch} />
+                </div>
+              </div>
             </div>
-            <div className="moni-anim-in">
-              <GastosPanel
-                gastos={state.gastos}
-                gastosDiarios={state.gastosDiarios}
-                dispatch={dispatch}
-                onOpenUnified={openUnified}
-              />
+
+            <div className="moni-planning__group moni-anim-in" id="moni-planning-ingresos">
+              <div className="moni-planning__group-head">
+                <div className="moni-planning__group-titles">
+                  <p className="moni-planning__group-kicker">Paso 2 de 4</p>
+                  <h3 className="moni-planning__group-title">Ingresos del mes</h3>
+                  <p className="moni-planning__group-hint">
+                    Ingreso fijo u habitual: sueldo, monotributo, alquiler cobrado, etc.
+                  </p>
+                </div>
+              </div>
+              <div className="moni-planning__group-panels">
+                <div className="moni-planning__panel">
+                  <IncomesPanel
+                    items={state.ingresos}
+                    dispatch={dispatch}
+                    expandFormSignal={0}
+                  />
+                </div>
+              </div>
             </div>
-            <div className="moni-anim-in">
-              <DebtsPanel
-                items={state.deudas}
-                dispatch={dispatch}
-                expandFormSignal={0}
-              />
+
+            <div className="moni-planning__group moni-anim-in" id="moni-planning-gastos">
+              <div className="moni-planning__group-head">
+                <div className="moni-planning__group-titles">
+                  <p className="moni-planning__group-kicker">Paso 3 de 4</p>
+                  <h3 className="moni-planning__group-title">Gastos fijos y del día</h3>
+                  <p className="moni-planning__group-hint">
+                    Primero lo que pagás todos los meses; después lo variable que vas registrando.
+                  </p>
+                </div>
+              </div>
+              <div className="moni-planning__group-panels">
+                <div className="moni-planning__panel">
+                  <GastosPanel
+                    gastos={state.gastos}
+                    gastosDiarios={state.gastosDiarios}
+                    dispatch={dispatch}
+                    onOpenUnified={openUnified}
+                  />
+                </div>
+              </div>
             </div>
-          </aside>
-        </div>
+
+            <div className="moni-planning__group moni-anim-in" id="moni-planning-deudas">
+              <div className="moni-planning__group-head">
+                <div className="moni-planning__group-titles">
+                  <p className="moni-planning__group-kicker">Paso 4 de 4</p>
+                  <h3 className="moni-planning__group-title">Deudas y cuotas</h3>
+                  <p className="moni-planning__group-hint">
+                    Cuotas y préstamos: Moni usa esto para el margen y la proyección.
+                  </p>
+                </div>
+              </div>
+              <div className="moni-planning__group-panels">
+                <div className="moni-planning__panel">
+                  <DebtsPanel
+                    items={state.deudas}
+                    dispatch={dispatch}
+                    expandFormSignal={0}
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+        <button
+          type="button"
+          className="moni-fab-add"
+          onClick={() => openUnified({ preferMode: 'variable' })}
+          aria-label="Agregar gasto rápido"
+        >
+          +
+        </button>
         <UnifiedExpenseSheet
           open={unifiedOpen}
           onClose={closeUnified}

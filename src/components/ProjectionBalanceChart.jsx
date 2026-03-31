@@ -25,7 +25,7 @@ export function ProjectionBalanceChart({ state }) {
       cancelAnimationFrame(id1)
       cancelAnimationFrame(id2)
     }
-  }, [state.ingresos, state.gastos, state.deudas])
+  }, [state.ingresos, state.gastos, state.deudas, state.gastosDiarios, state.budgets])
 
   return (
     <section
@@ -33,9 +33,10 @@ export function ProjectionBalanceChart({ state }) {
       aria-label="Gráfico de saldo neto proyectado por mes"
     >
       <div className="moni-card__head moni-chart-card__head">
-        <h3 className="moni-card__title">Saldo proyectado</h3>
+        <h3 className="moni-card__title">Pulso mensual</h3>
         <p className="moni-card__sub">
-          Misma escala en los seis meses: compará rápido cómo evoluciona el saldo.
+          Misma escala para los seis meses. Sirve para detectar rápido cuándo tu margen se estrecha
+          o entra en zona roja.
         </p>
       </div>
 
@@ -73,8 +74,8 @@ export function ProjectionBalanceChart({ state }) {
       </div>
 
       <p className="moni-proj-chart__hint">
-        Si una columna baja respecto de la anterior, el saldo mensual se
-        reduce (por ejemplo por más cuotas en ciertos meses).
+        Si una columna cae frente a la anterior, tu saldo mensual pierde aire; revisá cuotas,
+        gasto flexible o ingresos esperados.
       </p>
     </section>
   )

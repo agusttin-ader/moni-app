@@ -13,6 +13,11 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID ?? '',
 }
 
+const optionalAiAdviceConfig = {
+  endpoint: String(import.meta.env.VITE_MONI_ADVICE_API_URL ?? '').trim(),
+  enabled: String(import.meta.env.VITE_MONI_ADVICE_ENABLED ?? '').toLowerCase() === 'true',
+}
+
 function firebaseEnvComplete() {
   const required = [
     firebaseConfig.apiKey,
@@ -53,4 +58,4 @@ if (!firebaseEnvComplete()) {
   }
 }
 
-export { auth, db, storage, firebaseInitError }
+export { auth, db, storage, firebaseInitError, optionalAiAdviceConfig }

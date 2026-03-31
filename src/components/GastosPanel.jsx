@@ -73,7 +73,7 @@ export function GastosPanel({ gastos, gastosDiarios, dispatch, onOpenUnified }) 
       <h3 className="moni-panel__title">Gastos</h3>
       <p className="moni-panel__hint moni-panel__hint--gastos">
         Un solo registro para <strong>fijos</strong> (cada mes) y <strong>variables</strong>{' '}
-        (por día). Los gráficos usan ambos automáticamente.
+        (por día). Los variables alimentan el presupuesto flexible y la proyección.
       </p>
 
       <div className="moni-gastos-toolbar">

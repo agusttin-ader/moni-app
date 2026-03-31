@@ -11,8 +11,8 @@ export function RemainingSummary({ state }) {
   const r = useAnimatedNumber(b.remaining)
 
   return (
-    <section className="moni-card moni-breakdown" aria-label="Desglose del mes">
-      <h3 className="moni-card__title">Desglose del mes</h3>
+    <section className="moni-card moni-breakdown" aria-label="Base del mes">
+      <h3 className="moni-card__title">Base del mes</h3>
       <ul className="moni-kv">
         <li>
           <span>Ingresos</span>

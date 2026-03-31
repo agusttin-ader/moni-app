@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { EXPENSE_CATEGORIES } from '../lib/expenseCategories.js'
 import { amountFieldError, nameFieldError } from '../lib/formValidation.js'
+import { lockBodyScroll } from '../lib/bodyScrollLock.js'
 
 function todayISODate() {
   const d = new Date()
@@ -81,11 +83,7 @@ export function UnifiedExpenseSheet({
 
   useEffect(() => {
     if (!open) return undefined
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = prev
-    }
+    return lockBodyScroll()
   }, [open])
 
   const onSubmit = (ev) => {
@@ -148,7 +146,7 @@ export function UnifiedExpenseSheet({
 
   if (!open) return null
 
-  return (
+  return createPortal(
     <div className="moni-unified-sheet" role="dialog" aria-modal="true" aria-labelledby="moni-unified-sheet-title">
       <button
         type="button"
@@ -270,6 +268,7 @@ export function UnifiedExpenseSheet({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

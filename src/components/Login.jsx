@@ -100,10 +100,11 @@ export function Login() {
       aria-labelledby="login-title"
     >
       <h2 id="login-title" className="moni-login-card__title">
-        Empezá ahora
+        Empezá tu plan con MONI
       </h2>
       <p className="moni-login-card__hint">
-        Creá tu cuenta con Google o con email y contraseña.
+        Entrá para ordenar tu situación actual, definir una meta concreta y ver si el futuro que
+        querés es financieramente posible.
       </p>
 
       <button

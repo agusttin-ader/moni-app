@@ -1,8 +1,10 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
   PROJECTION_HORIZON_MONTHS,
+  activeGoalModel,
   projectionBalanceClassSuffix,
   projectionDetailRows,
+  projectedVariableSourceLabel,
   projectionShortLabel,
 } from '../lib/calculations.js'
 import { formatMoney } from '../lib/format.js'
@@ -66,6 +68,7 @@ function pathDFromPoints(pts) {
 const PROJECTION_LINE_ANIM_MS = 480
 
 export function Projection({ state }) {
+  const goal = activeGoalModel(state)
   const rows = useMemo(
     () => projectionDetailRows(state, PROJECTION_HORIZON_MONTHS),
     [state],
@@ -160,13 +163,28 @@ export function Projection({ state }) {
   return (
     <section className="moni-card moni-projection" id="proyeccion">
       <div className="moni-card__head">
-        <h3 className="moni-card__title">Flujo proyectado</h3>
+        <h3 className="moni-card__title">Proyección futura</h3>
         <p className="moni-card__sub">
-          Línea según <strong>saldo neto</strong> de cada mes (ingresos − gastos
-          fijos − variables del mes − cuotas). Los montos de abajo siguen a cada
-          punto del gráfico.
+          Saldo neto estimado por mes para ver si el rumbo actual acompaña tu objetivo principal.
         </p>
       </div>
+
+      {goal ? (
+        <div className={`moni-projection-goal moni-projection-goal--${goal.viability}`}>
+          <div>
+            <span className="moni-projection-goal__label">Meta activa</span>
+            <strong className="moni-projection-goal__title">{goal.title}</strong>
+          </div>
+          <div className="moni-projection-goal__metrics">
+            <span>
+              Proyectado: <strong>{formatMoney(goal.projectedByTarget)}</strong>
+            </span>
+            <span>
+              Objetivo: <strong>{formatMoney(goal.targetAmount)}</strong>
+            </span>
+          </div>
+        </div>
+      ) : null}
 
       <div
         className="moni-projection-chart"
@@ -227,7 +245,7 @@ export function Projection({ state }) {
         scrollMaxClass="moni-collapse__scroll--projection"
       >
         <p className="moni-card__sub moni-projection__list-hint">
-          Abrí cada mes para ver el desglose de ingresos y egresos.
+          Abrí cada mes para entender cuánto aire real te deja para avanzar hacia la meta.
         </p>
         <ul className="moni-projection-list">
           {rows.map((row) => {
@@ -274,8 +292,8 @@ export function Projection({ state }) {
                       <p className="moni-projection-item__meta">
                         Ingresos {formatMoney(row.incomes)} · Fijos{' '}
                         {formatMoney(row.fixed)} · Variables{' '}
-                        {formatMoney(row.daily)} · Cuotas{' '}
-                        {formatMoney(row.debts)}
+                        {formatMoney(row.daily)} ({projectedVariableSourceLabel(row.dailySource)})
+                        {' · '}Cuotas {formatMoney(row.debts)}
                       </p>
                     </div>
                   </div>

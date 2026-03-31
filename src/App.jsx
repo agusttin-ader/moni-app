@@ -136,27 +136,27 @@ export default function App() {
                 fetchPriority="high"
               />
             </div>
-            <p className="moni-auth-hero__eyebrow">Finanzas personales</p>
+            <p className="moni-auth-hero__eyebrow">Orden y proyección financiera</p>
             <h1 className="moni-auth-hero__title">
-              Toma el control{' '}
-              <span className="moni-auth-hero__accent">de tus finanzas</span>
+              Convertí tus datos en un plan{' '}
+              <span className="moni-auth-hero__accent">claro para tu futuro</span>
             </h1>
             <p className="moni-auth-hero__lead">
-              Ingresos, gastos y cuotas en un solo lugar. Entrá con Google o
-              email y organizá tu mes en minutos.
+              Ingresos, gastos, cuotas, metas y proyección futura en una experiencia mobile-first
+              más limpia, más profesional y enfocada en decisiones reales.
             </p>
             <ol className="moni-auth-hero__steps">
               <li style={{ animationDelay: '120ms' }}>
                 <span className="moni-auth-step-num">1</span>
-                <span>Creá tu cuenta o iniciá sesión</span>
+                <span>Cargá tu situación financiera actual</span>
               </li>
               <li style={{ animationDelay: '360ms' }}>
                 <span className="moni-auth-step-num">2</span>
-                <span>Cargá tus ingresos y gastos</span>
+                <span>Definí una meta y ordená prioridades</span>
               </li>
               <li style={{ animationDelay: '600ms' }}>
                 <span className="moni-auth-step-num">3</span>
-                <span>Mirá tu proyección a 6 meses</span>
+                <span>Descubrí si tu plan es viable a futuro</span>
               </li>
             </ol>
             <figure

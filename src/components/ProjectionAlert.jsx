@@ -11,7 +11,9 @@ export function ProjectionAlert({ state }) {
       <span className="moni-alert__icon" aria-hidden>
         !
       </span>
-      <p className="moni-alert__text">{text}</p>
+      <p className="moni-alert__text">
+        {text} Ajustá cuotas, ingresos o presupuesto flexible para recuperar margen.
+      </p>
     </div>
   )
 }

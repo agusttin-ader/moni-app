@@ -20,6 +20,8 @@ export function createInitialState() {
     gastos: [],
     deudas: [],
     gastosDiarios: [],
+    budgets: [],
+    goals: [],
     onboardingComplete: false,
   }
 }
@@ -42,6 +44,8 @@ export function moniReducer(state, action) {
         gastosDiarios: Array.isArray(p?.gastosDiarios)
           ? p.gastosDiarios
           : base.gastosDiarios,
+        budgets: Array.isArray(p?.budgets) ? p.budgets : base.budgets,
+        goals: Array.isArray(p?.goals) ? p.goals : base.goals,
         onboardingComplete: deriveOnboardingComplete(p),
       }
     }
@@ -216,6 +220,83 @@ export function moniReducer(state, action) {
         gastosDiarios: state.gastosDiarios.filter(
           (x) => x.id !== action.payload.id,
         ),
+      }
+
+    case 'budget/save': {
+      const id = String(action.payload?.id ?? '').trim()
+      const categoryId = String(action.payload?.categoryId ?? 'other')
+      const monthlyLimit = Number(action.payload?.monthlyLimit) || 0
+      const byId = id
+        ? state.budgets.findIndex((x) => x.id === id)
+        : state.budgets.findIndex((x) => x.categoryId === categoryId)
+      if (byId >= 0) {
+        return {
+          ...state,
+          budgets: state.budgets.map((x, index) =>
+            index === byId
+              ? {
+                  ...x,
+                  categoryId,
+                  monthlyLimit,
+                }
+              : x,
+          ),
+        }
+      }
+      return {
+        ...state,
+        budgets: [
+          ...state.budgets,
+          {
+            id: genId(),
+            categoryId,
+            monthlyLimit,
+          },
+        ],
+      }
+    }
+
+    case 'budget/delete':
+      return {
+        ...state,
+        budgets: state.budgets.filter((x) => x.id !== action.payload.id),
+      }
+
+    case 'goal/save': {
+      const id = String(action.payload?.id ?? '').trim()
+      const nextGoal = {
+        id: id || genId(),
+        title: String(action.payload?.title ?? '').trim(),
+        targetAmount: Math.max(0, Number(action.payload?.targetAmount) || 0),
+        savedAmount: Math.max(0, Number(action.payload?.savedAmount) || 0),
+        targetMonth: normalizeStartMonth(action.payload?.targetMonth),
+        priority:
+          String(action.payload?.priority ?? 'medium') === 'high'
+            ? 'high'
+            : String(action.payload?.priority ?? 'medium') === 'low'
+              ? 'low'
+              : 'medium',
+        category: String(action.payload?.category ?? 'other'),
+      }
+      const existingIndex = state.goals.findIndex((goal) => goal.id === nextGoal.id)
+      if (existingIndex >= 0) {
+        return {
+          ...state,
+          goals: state.goals.map((goal, index) =>
+            index === existingIndex ? { ...goal, ...nextGoal } : goal,
+          ),
+        }
+      }
+      return {
+        ...state,
+        goals: [...state.goals, nextGoal],
+      }
+    }
+
+    case 'goal/delete':
+      return {
+        ...state,
+        goals: state.goals.filter((goal) => goal.id !== action.payload.id),
       }
 
     default:

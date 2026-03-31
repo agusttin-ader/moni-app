@@ -1,10 +1,11 @@
-import { buildCurrentMonthHeroView } from '../lib/calculations.js'
+import { buildCurrentMonthHeroView, currentMonthHeroMeta } from '../lib/calculations.js'
 import { formatMoney } from '../lib/format.js'
 import { useAnimatedNumber } from '../hooks/useAnimatedNumber.js'
 
-export function CurrentMonthHero({ remaining }) {
+export function CurrentMonthHero({ state, remaining }) {
   const animated = useAnimatedNumber(remaining)
   const view = buildCurrentMonthHeroView(animated, formatMoney)
+  const meta = currentMonthHeroMeta(state, formatMoney)
   const suffix = view.model.tone
 
   return (
@@ -20,6 +21,12 @@ export function CurrentMonthHero({ remaining }) {
           {view.amountDisplay}
         </p>
         <p className="moni-hero-main__caption">{view.message}</p>
+        <div className="moni-hero-main__meta">
+          <span className={`moni-hero-main__meta-pill moni-hero-main__meta-pill--${meta.tone}`}>
+            {meta.label}
+          </span>
+          <strong className="moni-hero-main__meta-value">{meta.value}</strong>
+        </div>
       </div>
     </section>
   )

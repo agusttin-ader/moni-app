@@ -12,6 +12,8 @@ function emptyUserData() {
     gastos: [],
     deudas: [],
     gastosDiarios: [],
+    budgets: [],
+    goals: [],
     onboardingComplete: false,
   }
 }
@@ -55,6 +57,39 @@ function normalizeUserPayload(raw) {
   const gastosDiarios = Array.isArray(raw.gastosDiarios)
     ? raw.gastosDiarios
     : []
+  const budgets = Array.isArray(raw.budgets)
+    ? raw.budgets
+        .map((b) => {
+          if (!b || typeof b !== 'object') return null
+          return {
+            id: String(b.id ?? '').trim() || `budget_${String(b.categoryId ?? 'other')}`,
+            categoryId: String(b.categoryId ?? 'other'),
+            monthlyLimit: Math.max(0, Number(b.monthlyLimit) || 0),
+          }
+        })
+        .filter(Boolean)
+    : []
+  const goals = Array.isArray(raw.goals)
+    ? raw.goals
+        .map((goal) => {
+          if (!goal || typeof goal !== 'object') return null
+          return {
+            id: String(goal.id ?? '').trim() || `goal_${Date.now()}`,
+            title: String(goal.title ?? '').trim(),
+            targetAmount: Math.max(0, Number(goal.targetAmount) || 0),
+            savedAmount: Math.max(0, Number(goal.savedAmount) || 0),
+            targetMonth: normalizeStartMonth(goal.targetMonth),
+            priority:
+              String(goal.priority ?? 'medium') === 'high'
+                ? 'high'
+                : String(goal.priority ?? 'medium') === 'low'
+                  ? 'low'
+                  : 'medium',
+            category: String(goal.category ?? 'other'),
+          }
+        })
+        .filter(Boolean)
+    : []
   let onboardingComplete = raw.onboardingComplete
   if (onboardingComplete !== true && onboardingComplete !== false) {
     onboardingComplete =
@@ -65,6 +100,8 @@ function normalizeUserPayload(raw) {
     gastos,
     deudas,
     gastosDiarios,
+    budgets,
+    goals,
     onboardingComplete,
   }
 }
