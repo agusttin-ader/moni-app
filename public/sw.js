@@ -1,9 +1,15 @@
-const CACHE_NAME = 'moni-cache-v1'
-const APP_SHELL = ['/', '/index.html', '/manifest.webmanifest']
+/**
+ * Importante: con assets hasheados (Vite), cache-first en HTML rompe el deploy:
+ * el index cacheado apunta a viejos *.js → 404 → pantalla negra sin React.
+ * Online: red primero y actualizamos cache. Offline: fallback al cache.
+ */
+const CACHE_NAME = 'moni-cache-v3'
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)),
+    caches.open(CACHE_NAME).then((cache) =>
+      cache.addAll(['/', '/index.html', '/manifest.webmanifest']).catch(() => {}),
+    ),
   )
   self.skipWaiting()
 })
@@ -11,12 +17,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) return caches.delete(key)
-          return Promise.resolve()
-        }),
-      ),
+      Promise.all(keys.map((key) => (key === CACHE_NAME ? null : caches.delete(key)))),
     ),
   )
   self.clients.claim()
@@ -24,25 +25,28 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const req = event.request
-
-  // Solo cacheamos GET del mismo origen.
   if (req.method !== 'GET') return
-  if (new URL(req.url).origin !== self.location.origin) return
+  const url = new URL(req.url)
+  if (url.origin !== self.location.origin) return
 
-  event.respondWith(
-    caches.match(req).then((cached) => {
-      if (cached) return cached
-
-      return fetch(req)
-        .then((response) => {
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response
-          }
-          const copy = response.clone()
-          caches.open(CACHE_NAME).then((cache) => cache.put(req, copy))
-          return response
-        })
-        .catch(() => caches.match('/index.html'))
-    }),
-  )
+  event.respondWith(networkFirstWithCacheFallback(req))
 })
+
+async function networkFirstWithCacheFallback(req) {
+  try {
+    const response = await fetch(req)
+    if (response && response.status === 200 && response.type === 'basic') {
+      const copy = response.clone()
+      caches.open(CACHE_NAME).then((cache) => cache.put(req, copy))
+    }
+    return response
+  } catch {
+    const cached = await caches.match(req)
+    if (cached) return cached
+    if (req.mode === 'navigate') {
+      const shell = await caches.match('/index.html')
+      if (shell) return shell
+    }
+    return Response.error()
+  }
+}
