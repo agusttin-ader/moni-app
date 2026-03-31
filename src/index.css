@@ -32,7 +32,7 @@
 
 html {
   background: var(--eth-bg-deep);
-  overflow-x: clip;
+  overflow-x: hidden;
   scroll-behavior: smooth;
 }
 
@@ -44,13 +44,11 @@ html {
 
 body {
   margin: 0;
-  min-height: 100vh;
-  min-height: 100svh;
   font-family: var(--eth-font);
   color: var(--eth-text);
   background:
     radial-gradient(1200px 800px at 10% -10%, rgba(94, 228, 214, 0.14), transparent),
-    radial-gradient(900px 700px at 90% 0%, rgba(139, 92, 246, 0.16), transparent),
+    radial-gradient(900px 700px at 90% 0%, rgba(139, 92, 246, 0.22), transparent),
     linear-gradient(180deg, var(--eth-bg-mid), var(--eth-bg-deep));
   -webkit-font-smoothing: antialiased;
 }

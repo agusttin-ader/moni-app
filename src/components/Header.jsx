@@ -75,7 +75,17 @@ export function Header({ user, profile, onLogout, onOpenProfile, onOpenHistory }
               className="moni-avatar"
               title={user?.email ?? user?.displayName ?? 'Usuario'}
             >
-              {avatarUrl ? <img src={avatarUrl} alt="" /> : initialsFromUser(user, profile)}
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt=""
+                  decoding="async"
+                  loading="lazy"
+                  fetchPriority="low"
+                />
+              ) : (
+                initialsFromUser(user, profile)
+              )}
             </div>
             <div className="moni-topnav__session-text">
               <span className="moni-topnav__session-label">{sessionLabel}</span>

@@ -100,10 +100,10 @@ export function Login() {
       aria-labelledby="login-title"
     >
       <h2 id="login-title" className="moni-login-card__title">
-        Crear tu cuenta
+        Empezá ahora
       </h2>
       <p className="moni-login-card__hint">
-        Usá tu email o continuá con Google.
+        Creá tu cuenta con Google o con email y contraseña.
       </p>
 
       <button
@@ -185,18 +185,18 @@ export function Login() {
         <div className="moni-login-actions">
           <button
             type="submit"
-            className="moni-btn moni-btn--primary moni-btn--block"
+            className="moni-btn moni-btn--primary moni-btn--block moni-login-card__cta"
             disabled={busy}
           >
             Crear cuenta
           </button>
           <button
             type="button"
-            className="moni-btn moni-btn--ghost moni-btn--block"
+            className="moni-login-foot-link"
             onClick={onLoginOnly}
             disabled={busy}
           >
-            Ya tengo cuenta
+            ¿Ya tenés cuenta? <span className="moni-login-foot-link__em">Iniciar sesión</span>
           </button>
         </div>
       </form>

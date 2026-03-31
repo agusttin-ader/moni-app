@@ -1,9 +1,12 @@
 import { useState } from 'react'
+import { useNarrowViewport } from '../hooks/useNarrowViewport.js'
 import { CollapsiblePanelDetail } from './CollapsiblePanelDetail.jsx'
 import { amountFieldError, nameFieldError } from '../lib/formValidation.js'
 import { formatMoney } from '../lib/format.js'
 
 export function ExpensesPanel({ items, dispatch }) {
+  const narrow = useNarrowViewport()
+  const [addFormOpen, setAddFormOpen] = useState(false)
   const [name, setName] = useState('')
   const [amount, setAmount] = useState('')
   const [error, setError] = useState(null)
@@ -44,57 +47,73 @@ export function ExpensesPanel({ items, dispatch }) {
     setError(null)
   }
 
+  const form = (
+    <form
+      className="moni-form moni-form--compact moni-form--panel"
+      onSubmit={onSubmit}
+      autoComplete="off"
+    >
+      <div className="moni-form-row moni-form-row--split">
+        <label className="moni-field">
+          <span className="moni-field__label">Concepto</span>
+          <input
+            className="moni-input"
+            name="expense-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Ej. alquiler"
+          />
+        </label>
+        <label className="moni-field">
+          <span className="moni-field__label">Monto / mes</span>
+          <input
+            className="moni-input"
+            name="expense-amount"
+            inputMode="decimal"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="0"
+          />
+        </label>
+      </div>
+      {error ? (
+        <p className="moni-form-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+      <div className="moni-form-actions">
+        <button type="submit" className="moni-btn moni-btn--primary moni-btn--sm">
+          {editingId ? 'Guardar' : 'Agregar'}
+        </button>
+        {editingId ? (
+          <button
+            type="button"
+            className="moni-btn moni-btn--ghost moni-btn--sm"
+            onClick={reset}
+          >
+            Cancelar
+          </button>
+        ) : null}
+      </div>
+    </form>
+  )
+
   return (
     <section className="moni-panel" aria-label="Gastos fijos">
       <h3 className="moni-panel__title">Gastos fijos</h3>
-      <form
-        className="moni-form moni-form--compact moni-form--panel"
-        onSubmit={onSubmit}
-        autoComplete="off"
-      >
-        <div className="moni-form-row moni-form-row--split">
-          <label className="moni-field">
-            <span className="moni-field__label">Concepto</span>
-            <input
-              className="moni-input"
-              name="expense-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ej. alquiler"
-            />
-          </label>
-          <label className="moni-field">
-            <span className="moni-field__label">Monto / mes</span>
-            <input
-              className="moni-input"
-              name="expense-amount"
-              inputMode="decimal"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="0"
-            />
-          </label>
-        </div>
-        {error ? (
-          <p className="moni-form-error" role="alert">
-            {error}
-          </p>
-        ) : null}
-        <div className="moni-form-actions">
-          <button type="submit" className="moni-btn moni-btn--primary moni-btn--sm">
-            {editingId ? 'Guardar' : 'Agregar'}
-          </button>
-          {editingId ? (
-            <button
-              type="button"
-              className="moni-btn moni-btn--ghost moni-btn--sm"
-              onClick={reset}
-            >
-              Cancelar
-            </button>
-          ) : null}
-        </div>
-      </form>
+      {narrow ? (
+        <CollapsiblePanelDetail
+          className="moni-collapse--panel-form"
+          labelCollapsed="Agregar gasto fijo"
+          labelOpen="Ocultar formulario"
+          open={addFormOpen || Boolean(editingId)}
+          onOpenChange={setAddFormOpen}
+        >
+          {form}
+        </CollapsiblePanelDetail>
+      ) : (
+        form
+      )}
 
       {!items.length ? (
         <p className="moni-empty">No hay gastos cargados.</p>

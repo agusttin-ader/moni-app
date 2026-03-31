@@ -1,6 +1,6 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import './App.css'
-import { Login } from './components/Login.jsx'
+import { AppFooter } from './components/AppFooter.jsx'
 import { useAuth } from './hooks/useAuth.js'
 import { useMoniState } from './hooks/useMoniState.js'
 import { logout } from './lib/auth.js'
@@ -8,6 +8,9 @@ import { firebaseInitError } from './lib/firebase.js'
 
 const Dashboard = lazy(() =>
   import('./components/Dashboard.jsx').then((m) => ({ default: m.Dashboard })),
+)
+const Login = lazy(() =>
+  import('./components/Login.jsx').then((m) => ({ default: m.Login })),
 )
 
 const MOTIVATION_QUOTES = [
@@ -60,6 +63,31 @@ export default function App() {
   const [logoutBusy, setLogoutBusy] = useState(false)
 
   useEffect(() => {
+    const root = document.documentElement
+    const syncPwaFlag = () => {
+      const nav = window.navigator
+      const iosStandalone =
+        'standalone' in nav &&
+        /** @type {Navigator & { standalone?: boolean }} */ (nav).standalone ===
+          true
+      const standalone =
+        window.matchMedia('(display-mode: standalone)').matches ||
+        window.matchMedia('(display-mode: fullscreen)').matches ||
+        iosStandalone
+      root.toggleAttribute('data-moni-pwa', standalone)
+    }
+    syncPwaFlag()
+    const m1 = window.matchMedia('(display-mode: standalone)')
+    const m2 = window.matchMedia('(display-mode: fullscreen)')
+    m1.addEventListener('change', syncPwaFlag)
+    m2.addEventListener('change', syncPwaFlag)
+    return () => {
+      m1.removeEventListener('change', syncPwaFlag)
+      m2.removeEventListener('change', syncPwaFlag)
+    }
+  }, [])
+
+  useEffect(() => {
     if (user) return undefined
     const t = setInterval(() => {
       setQuoteIndex((i) => (i + 1) % MOTIVATION_QUOTES.length)
@@ -67,14 +95,14 @@ export default function App() {
     return () => clearInterval(t)
   }, [user])
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     setLogoutBusy(true)
     try {
       await logout()
     } finally {
       setLogoutBusy(false)
     }
-  }
+  }, [])
 
   if (authLoading) {
     return (
@@ -89,6 +117,7 @@ export default function App() {
     const quote = MOTIVATION_QUOTES[quoteIndex] ?? MOTIVATION_QUOTES[0]
     return (
       <div className="moni-auth-shell">
+        <div className="moni-auth-visual-top" aria-hidden />
         {firebaseInitError ? (
           <div className="moni-config-alert" role="alert">
             <strong className="moni-config-alert__title">Configuración</strong>
@@ -97,11 +126,23 @@ export default function App() {
         ) : null}
         <div className="moni-auth-main">
           <div className="moni-auth-hero" aria-hidden={false}>
-            <p className="moni-auth-hero__eyebrow">Bienvenido a Moni</p>
-            <h1 className="moni-auth-hero__title">Organizá tu mes con claridad</h1>
+            <div className="moni-auth-brand">
+              <img
+                className="moni-auth-brand__logo"
+                src="/images/moni-logo.png"
+                alt="Moni"
+                decoding="async"
+                fetchPriority="high"
+              />
+            </div>
+            <p className="moni-auth-hero__eyebrow">Finanzas personales</p>
+            <h1 className="moni-auth-hero__title">
+              Toma el control{' '}
+              <span className="moni-auth-hero__accent">de tus finanzas</span>
+            </h1>
             <p className="moni-auth-hero__lead">
-              Creá tu cuenta o iniciá sesión. En tres pasos simples ves cuánto te
-              queda hoy y cómo se proyectan los próximos meses.
+              Ingresos, gastos y cuotas en un solo lugar. Entrá con Google o
+              email y organizá tu mes en minutos.
             </p>
             <ol className="moni-auth-hero__steps">
               <li style={{ animationDelay: '120ms' }}>
@@ -131,9 +172,20 @@ export default function App() {
             </figure>
           </div>
           <div className="moni-auth-panel">
-            <Login />
+            <Suspense
+              fallback={
+                <div
+                  className="moni-login-card moni-login-card--skeleton"
+                  aria-busy="true"
+                  aria-label="Cargando formulario"
+                />
+              }
+            >
+              <Login />
+            </Suspense>
           </div>
         </div>
+        <AppFooter variant="auth" />
       </div>
     )
   }

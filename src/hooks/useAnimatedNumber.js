@@ -29,12 +29,18 @@ export function useAnimatedNumber(value) {
       const p = Math.min(1, (t - startRef.current) / DURATION_MS)
       const eased = 1 - (1 - p) ** 3
       const next = from + (end - from) * eased
-      setDisplay(next)
-      if (p < 1) rafRef.current = requestAnimationFrame(step)
-      else {
+      if (p >= 1) {
         fromRef.current = end
         setDisplay(end)
+        return
       }
+      setDisplay((prev) => {
+        const nextR = Math.round(next)
+        const prevR = Math.round(prev)
+        if (prevR === nextR) return prev
+        return next
+      })
+      rafRef.current = requestAnimationFrame(step)
     }
     rafRef.current = requestAnimationFrame(step)
     return () => {

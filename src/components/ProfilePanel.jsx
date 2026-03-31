@@ -112,7 +112,12 @@ export function ProfilePanel({
           <div className="moni-profile-card">
             <div className="moni-profile-card__avatar">
               {form.avatarUrl ? (
-                <img src={form.avatarUrl} alt="Avatar" />
+                <img
+                  src={form.avatarUrl}
+                  alt="Avatar"
+                  decoding="async"
+                  loading="lazy"
+                />
               ) : (
                 <span>{initials}</span>
               )}

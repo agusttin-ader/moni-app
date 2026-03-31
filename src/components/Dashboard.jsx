@@ -1,25 +1,35 @@
-import { useState } from 'react'
+import { lazy, Suspense, useCallback, useState } from 'react'
 import { computeMonthBalance } from '../lib/calculations.js'
-import { BreakdownFlowChart } from './BreakdownFlowChart.jsx'
 import { CurrentMonthHero } from './CurrentMonthHero.jsx'
 import { DebtsPanel } from './DebtsPanel.jsx'
 import { ExpensesPanel } from './ExpensesPanel.jsx'
+import { AppFooter } from './AppFooter.jsx'
 import { Header } from './Header.jsx'
 import { IncomesPanel } from './IncomesPanel.jsx'
 import { MiniMetrics } from './MiniMetrics.jsx'
-import { ProfilePanel } from './ProfilePanel.jsx'
-import { Projection } from './Projection.jsx'
-import { ProjectionHistoryPanel } from './ProjectionHistoryPanel.jsx'
 import { ProjectionAlert } from './ProjectionAlert.jsx'
-import { ProjectionBalanceChart } from './ProjectionBalanceChart.jsx'
-import { RemainingSummary } from './RemainingSummary.jsx'
 import { useUserProfile } from '../hooks/useUserProfile.js'
 import { useProjectionHistory } from '../hooks/useProjectionHistory.js'
+
+const ProfilePanel = lazy(() =>
+  import('./ProfilePanel.jsx').then((m) => ({ default: m.ProfilePanel })),
+)
+const ProjectionHistoryPanel = lazy(() =>
+  import('./ProjectionHistoryPanel.jsx').then((m) => ({
+    default: m.ProjectionHistoryPanel,
+  })),
+)
+const DashboardInsightsLazy = lazy(() => import('./DashboardInsightsLazy.jsx'))
 
 export function Dashboard({ state, dispatch, user, onLogout }) {
   const { remaining } = computeMonthBalance(state, 0)
   const [profileOpen, setProfileOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
+
+  const onOpenProfile = useCallback(() => setProfileOpen(true), [])
+  const onCloseProfile = useCallback(() => setProfileOpen(false), [])
+  const onOpenHistory = useCallback(() => setHistoryOpen(true), [])
+  const onCloseHistory = useCallback(() => setHistoryOpen(false), [])
   const {
     profile,
     loading: profileLoading,
@@ -41,28 +51,36 @@ export function Dashboard({ state, dispatch, user, onLogout }) {
         user={user}
         profile={profile}
         onLogout={onLogout}
-        onOpenProfile={() => setProfileOpen(true)}
-        onOpenHistory={() => setHistoryOpen(true)}
+        onOpenProfile={onOpenProfile}
+        onOpenHistory={onOpenHistory}
       />
-      <ProfilePanel
-        open={profileOpen}
-        onClose={() => setProfileOpen(false)}
-        user={user}
-        profile={profile}
-        loading={profileLoading}
-        saving={profileSaving}
-        uploading={profileUploading}
-        error={profileError}
-        onSave={saveProfile}
-        onUploadAvatar={updateAvatar}
-      />
-      <ProjectionHistoryPanel
-        open={historyOpen}
-        onClose={() => setHistoryOpen(false)}
-        history={projectionHistory}
-        loading={projectionHistoryLoading}
-        error={projectionHistoryError}
-      />
+      {profileOpen ? (
+        <Suspense fallback={null}>
+          <ProfilePanel
+            open
+            onClose={onCloseProfile}
+            user={user}
+            profile={profile}
+            loading={profileLoading}
+            saving={profileSaving}
+            uploading={profileUploading}
+            error={profileError}
+            onSave={saveProfile}
+            onUploadAvatar={updateAvatar}
+          />
+        </Suspense>
+      ) : null}
+      {historyOpen ? (
+        <Suspense fallback={null}>
+          <ProjectionHistoryPanel
+            open
+            onClose={onCloseHistory}
+            history={projectionHistory}
+            loading={projectionHistoryLoading}
+            error={projectionHistoryError}
+          />
+        </Suspense>
+      ) : null}
       <main className="moni-main">
         <div className="moni-layout">
           <div className="moni-layout__primary">
@@ -79,14 +97,16 @@ export function Dashboard({ state, dispatch, user, onLogout }) {
             </div>
             <div className="moni-anim-in" style={{ animationDelay: '120ms' }}>
               <section className="moni-dashboard-insights">
-                <div className="moni-dashboard-insights__stack">
-                  <RemainingSummary state={state} />
-                  <BreakdownFlowChart state={state} />
-                </div>
-                <div className="moni-dashboard-insights__stack">
-                  <Projection state={state} />
-                  <ProjectionBalanceChart state={state} />
-                </div>
+                <Suspense
+                  fallback={
+                    <div
+                      className="moni-dashboard-insights-skel"
+                      aria-hidden
+                    />
+                  }
+                >
+                  <DashboardInsightsLazy state={state} />
+                </Suspense>
               </section>
             </div>
           </div>
@@ -104,6 +124,7 @@ export function Dashboard({ state, dispatch, user, onLogout }) {
           </aside>
         </div>
       </main>
+      <AppFooter variant="app" />
     </div>
   )
 }

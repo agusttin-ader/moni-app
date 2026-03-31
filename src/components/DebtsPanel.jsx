@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useNarrowViewport } from '../hooks/useNarrowViewport.js'
 import { CollapsiblePanelDetail } from './CollapsiblePanelDetail.jsx'
 import {
   currentYearMonthString,
@@ -16,6 +17,8 @@ import {
 import { formatMoney } from '../lib/format.js'
 
 export function DebtsPanel({ items, dispatch }) {
+  const narrow = useNarrowViewport()
+  const [addFormOpen, setAddFormOpen] = useState(false)
   const [name, setName] = useState('')
   const [totalAmount, setTotalAmount] = useState('')
   const [installmentCount, setInstallmentCount] = useState('')
@@ -81,97 +84,113 @@ export function DebtsPanel({ items, dispatch }) {
     setError(null)
   }
 
+  const form = (
+    <form
+      className="moni-form moni-form--compact moni-form--panel moni-form--debts"
+      onSubmit={onSubmit}
+      autoComplete="off"
+    >
+      <label className="moni-field">
+        <span className="moni-field__label">Concepto</span>
+        <input
+          className="moni-input"
+          name="debt-name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Ej. tarjeta, préstamo"
+        />
+      </label>
+      <div className="moni-form-row moni-form-row--split">
+        <label className="moni-field">
+          <span className="moni-field__label">Total a pagar</span>
+          <input
+            className="moni-input"
+            name="debt-total"
+            inputMode="decimal"
+            value={totalAmount}
+            onChange={(e) => setTotalAmount(e.target.value)}
+            placeholder="0"
+          />
+        </label>
+        <label className="moni-field">
+          <span className="moni-field__label">Nº cuotas</span>
+          <input
+            className="moni-input"
+            name="debt-installments"
+            inputMode="numeric"
+            value={installmentCount}
+            onChange={(e) => setInstallmentCount(e.target.value)}
+            placeholder="12"
+          />
+        </label>
+      </div>
+      <div className="moni-form-row moni-form-row--split">
+        <label className="moni-field">
+          <span className="moni-field__label">Primer mes</span>
+          <input
+            type="month"
+            className="moni-input moni-input--month"
+            name="debt-start"
+            value={startMonth}
+            onChange={(e) => setStartMonth(e.target.value)}
+          />
+        </label>
+        <label className="moni-field">
+          <span className="moni-field__label">Ya pagadas</span>
+          <input
+            className="moni-input"
+            name="debt-paid"
+            inputMode="numeric"
+            value={paidInstallments}
+            onChange={(e) => setPaidInstallments(e.target.value)}
+            placeholder="0"
+          />
+        </label>
+      </div>
+      {preview != null ? (
+        <p className="moni-hint">
+          Cuota mensual estimada: <strong>{formatMoney(preview)}</strong>
+        </p>
+      ) : null}
+      {error ? (
+        <p className="moni-form-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+      <div className="moni-form-actions">
+        <button type="submit" className="moni-btn moni-btn--primary moni-btn--sm">
+          {editingId ? 'Guardar' : 'Agregar'}
+        </button>
+        {editingId ? (
+          <button
+            type="button"
+            className="moni-btn moni-btn--ghost moni-btn--sm"
+            onClick={reset}
+          >
+            Cancelar
+          </button>
+        ) : null}
+      </div>
+    </form>
+  )
+
   return (
     <section className="moni-panel moni-panel--debts" aria-label="Deudas">
       <h3 className="moni-panel__title">Deudas (cuotas)</h3>
 
-      <form
-        className="moni-form moni-form--compact moni-form--panel moni-form--debts"
-        onSubmit={onSubmit}
-        autoComplete="off"
-      >
-        <label className="moni-field">
-          <span className="moni-field__label">Concepto</span>
-          <input
-            className="moni-input"
-            name="debt-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Ej. tarjeta, préstamo"
-          />
-        </label>
-        <div className="moni-form-row moni-form-row--split">
-          <label className="moni-field">
-            <span className="moni-field__label">Total a pagar</span>
-            <input
-              className="moni-input"
-              name="debt-total"
-              inputMode="decimal"
-              value={totalAmount}
-              onChange={(e) => setTotalAmount(e.target.value)}
-              placeholder="0"
-            />
-          </label>
-          <label className="moni-field">
-            <span className="moni-field__label">Nº cuotas</span>
-            <input
-              className="moni-input"
-              name="debt-installments"
-              inputMode="numeric"
-              value={installmentCount}
-              onChange={(e) => setInstallmentCount(e.target.value)}
-              placeholder="12"
-            />
-          </label>
-        </div>
-        <div className="moni-form-row moni-form-row--split">
-          <label className="moni-field">
-            <span className="moni-field__label">Primer mes</span>
-            <input
-              type="month"
-              className="moni-input moni-input--month"
-              name="debt-start"
-              value={startMonth}
-              onChange={(e) => setStartMonth(e.target.value)}
-            />
-          </label>
-          <label className="moni-field">
-            <span className="moni-field__label">Ya pagadas</span>
-            <input
-              className="moni-input"
-              name="debt-paid"
-              inputMode="numeric"
-              value={paidInstallments}
-              onChange={(e) => setPaidInstallments(e.target.value)}
-              placeholder="0"
-            />
-          </label>
-        </div>
-        {preview != null ? (
-          <p className="moni-hint">
-            Cuota mensual estimada: <strong>{formatMoney(preview)}</strong>
-          </p>
-        ) : null}
-        {error ? (
-          <p className="moni-form-error" role="alert">
-            {error}
-          </p>
-        ) : null}
-        <div className="moni-form-actions">
-          <button type="submit" className="moni-btn moni-btn--primary moni-btn--sm">
-            {editingId ? 'Guardar' : 'Agregar'}
-          </button>
-          {editingId ? (
-            <button
-              type="button"
-              className="moni-btn moni-btn--ghost moni-btn--sm"
-              onClick={reset}
-            >
-              Cancelar
-            </button>
-          ) : null}
-        </div>
-      </form>
+      {narrow ? (
+        <CollapsiblePanelDetail
+          className="moni-collapse--panel-form"
+          labelCollapsed="Cargar deuda"
+          labelOpen="Ocultar formulario"
+          open={addFormOpen || Boolean(editingId)}
+          onOpenChange={setAddFormOpen}
+        >
+          {form}
+        </CollapsiblePanelDetail>
+      ) : (
+        form
+      )}
 
       {!items.length ? (
         <p className="moni-empty">No hay deudas cargadas.</p>

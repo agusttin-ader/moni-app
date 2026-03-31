@@ -5,9 +5,14 @@ import App from './App.jsx'
 import { RootErrorBoundary } from './RootErrorBoundary.jsx'
 
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
+  const registerSw = () => {
     navigator.serviceWorker.register('/sw.js').catch(() => {})
-  })
+  }
+  if (typeof requestIdleCallback === 'function') {
+    requestIdleCallback(registerSw, { timeout: 4000 })
+  } else {
+    window.addEventListener('load', registerSw)
+  }
 }
 
 const rootEl = document.getElementById('root')
