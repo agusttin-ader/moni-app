@@ -2173,19 +2173,18 @@
 }
 
 /* ——— Animations (dashboard enter) ——— */
+/* Solo movemos el contenido: si la animación no corre, no queda opacity:0 (pantalla “negra”). */
 .moni-anim-in {
-  opacity: 0;
+  opacity: 1;
   animation: moni-fade-up 0.52s var(--moni-ease-smooth, cubic-bezier(0.22, 1, 0.36, 1))
     forwards;
 }
 
 @keyframes moni-fade-up {
   from {
-    opacity: 0;
     transform: translateY(8px);
   }
   to {
-    opacity: 1;
     transform: translateY(0);
   }
 }
@@ -2193,7 +2192,6 @@
 @media (prefers-reduced-motion: reduce) {
   .moni-anim-in {
     animation: none;
-    opacity: 1;
     transform: none;
   }
 }
