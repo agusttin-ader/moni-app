@@ -12,6 +12,7 @@ import { db } from './firebase.js'
 import {
   computeMonthBalance,
   currentYearMonthString,
+  PROJECTION_HORIZON_MONTHS,
   projectionDetailRows,
 } from './calculations.js'
 
@@ -28,13 +29,15 @@ function historyCollection(uid) {
 export function buildProjectionSnapshot(state) {
   const monthKey = currentYearMonthString()
   const month = computeMonthBalance(state, 0)
-  const rows = projectionDetailRows(state, 3).map((row) => ({
-    monthKey: row.monthKey,
-    title: row.title,
-    balance: row.balance,
-    incomes: row.incomes,
-    outflow: row.fixed + row.debts,
-  }))
+  const rows = projectionDetailRows(state, PROJECTION_HORIZON_MONTHS).map(
+    (row) => ({
+      monthKey: row.monthKey,
+      title: row.title,
+      balance: row.balance,
+      incomes: row.incomes,
+      outflow: row.fixed + row.debts,
+    }),
+  )
   return {
     monthKey,
     incomes: month.incomes,

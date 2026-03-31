@@ -102,7 +102,10 @@ export function computeMonthBalance(state, monthOffset) {
 
 const PROJECTION_KEYS = ['actual', 'siguiente', 'siguiente+1']
 
-export function projectMonths(state, count = 3) {
+/** Coincide con los gráficos de proyección en la UI. */
+export const PROJECTION_HORIZON_MONTHS = 6
+
+export function projectMonths(state, count = PROJECTION_HORIZON_MONTHS) {
   const out = []
   for (let i = 0; i < count; i++) {
     const { remaining } = computeMonthBalance(state, i)
@@ -118,7 +121,7 @@ export function monthNetBalance(state, monthOffset) {
 }
 
 /** @returns {string|null} */
-export function deficitAlertText(state, horizonMonths = 3) {
+export function deficitAlertText(state, horizonMonths = PROJECTION_HORIZON_MONTHS) {
   const proj = projectMonths(state, horizonMonths)
   for (let i = 1; i < proj.length; i++) {
     if (proj[i].balance < 0) {
@@ -138,8 +141,25 @@ export function projectionRelativeTitle(projectionMonthKey) {
     case 'siguiente+1':
       return 'En dos meses'
     default:
-      return projectionMonthKey
+      break
   }
+
+  const m = /^siguiente\+(\d+)$/.exec(String(projectionMonthKey ?? ''))
+  if (!m) return projectionMonthKey
+  const n = Number(m[1]) + 1
+  if (!Number.isFinite(n) || n < 1) return projectionMonthKey
+  return `En ${n} meses`
+}
+
+/** Etiqueta corta para leyendas densas (p. ej. 6 meses en una fila). */
+export function projectionShortLabel(title) {
+  const t = String(title ?? '')
+  if (t === 'Mes actual') return 'Ahora'
+  if (t === 'Próximo mes') return '+1'
+  if (t === 'En dos meses') return '+2'
+  const m = /^En (\d+) meses$/.exec(t)
+  if (m) return `+${m[1]}`
+  return t
 }
 
 export function projectionBalanceClassSuffix(balance) {
@@ -147,7 +167,7 @@ export function projectionBalanceClassSuffix(balance) {
   return balance > 0 ? 'positive' : 'negative'
 }
 
-export function projectionDetailRows(state, count = 3) {
+export function projectionDetailRows(state, count = PROJECTION_HORIZON_MONTHS) {
   const proj = projectMonths(state, count)
   const rows = []
   let maxFlow = 0
@@ -501,7 +521,7 @@ export function breakdownFlowChartModel(state) {
 }
 
 /** Alturas normalizadas (0–1) para columnas de saldo proyectado. */
-export function projectionBalanceBarsModel(state, count = 3) {
+export function projectionBalanceBarsModel(state, count = PROJECTION_HORIZON_MONTHS) {
   const detail = projectionDetailRows(state, count)
   const balances = detail.map((r) => Number(r.balance) || 0)
   const minB = Math.min(0, ...balances)

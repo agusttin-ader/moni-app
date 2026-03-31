@@ -1,7 +1,7 @@
 {
   "name": "Moni",
   "short_name": "Moni",
-  "description": "Organización financiera personal: mes actual y proyección.",
+  "description": "Finanzas personales: mes actual y proyección a seis meses.",
   "id": "/",
   "start_url": "/",
   "scope": "/",

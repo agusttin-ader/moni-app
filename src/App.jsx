@@ -114,7 +114,7 @@ export default function App() {
               </li>
               <li style={{ animationDelay: '600ms' }}>
                 <span className="moni-auth-step-num">3</span>
-                <span>Mirá tu proyección de 3 meses</span>
+                <span>Mirá tu proyección a 6 meses</span>
               </li>
             </ol>
             <figure

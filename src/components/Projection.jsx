@@ -1,17 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
+  PROJECTION_HORIZON_MONTHS,
   projectionBalanceClassSuffix,
   projectionDetailRows,
+  projectionShortLabel,
 } from '../lib/calculations.js'
 import { formatMoney } from '../lib/format.js'
-
-function shortMonthLabel(title) {
-  const t = String(title ?? '')
-  if (t === 'Mes actual') return 'Ahora'
-  if (t === 'Próximo mes') return '+1 mes'
-  if (t === 'En dos meses') return '+2 meses'
-  return t
-}
 
 /** Escala Y según saldos reales: arriba = más saldo, abajo = menos (déficit). */
 function balanceChartGeometry(rows) {
@@ -44,8 +38,9 @@ function balanceChartGeometry(rows) {
 }
 
 export function Projection({ state }) {
-  const rows = projectionDetailRows(state, 3)
+  const rows = projectionDetailRows(state, PROJECTION_HORIZON_MONTHS)
   const [ready, setReady] = useState(false)
+  const dotR = rows.length > 4 ? 3 : 4
 
   const geo = useMemo(() => balanceChartGeometry(rows), [rows])
   const dataSignature = useMemo(
@@ -73,11 +68,16 @@ export function Projection({ state }) {
         <h3 className="moni-card__title">Flujo proyectado</h3>
         <p className="moni-card__sub">
           Línea según <strong>saldo neto</strong> de cada mes (ingresos − gastos
-          fijos − cuotas). Abajo el detalle en números.
+          fijos − cuotas) para los próximos seis meses. Abajo el detalle en
+          números.
         </p>
       </div>
 
-      <div className="moni-projection-chart" role="img" aria-label="Saldo neto proyectado en tres meses">
+      <div
+        className="moni-projection-chart"
+        role="img"
+        aria-label="Saldo neto proyectado en seis meses"
+      >
         <div
           className={`moni-projection-chart__svg-wrap ${ready ? 'moni-projection-chart--ready' : ''}`}
         >
@@ -106,7 +106,7 @@ export function Projection({ state }) {
                 className={`moni-projection-chart__dot moni-projection-chart__dot--${projectionBalanceClassSuffix(p.balance)}`}
                 cx={p.x}
                 cy={p.y}
-                r="4"
+                r={dotR}
               />
             ))}
           </svg>
@@ -115,7 +115,7 @@ export function Projection({ state }) {
           {rows.map((row) => (
             <li key={row.monthKey}>
               <span className="moni-projection-chart__key-label">
-                {shortMonthLabel(row.title)}
+                {projectionShortLabel(row.title)}
               </span>
               <span
                 className={`moni-projection-chart__key-val moni-projection-chart__key-val--${projectionBalanceClassSuffix(row.balance)}`}

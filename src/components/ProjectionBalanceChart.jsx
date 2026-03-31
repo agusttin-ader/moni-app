@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react'
-import { projectionBalanceBarsModel } from '../lib/calculations.js'
+import {
+  PROJECTION_HORIZON_MONTHS,
+  projectionBalanceBarsModel,
+  projectionShortLabel,
+} from '../lib/calculations.js'
 import { formatMoney } from '../lib/format.js'
 
 export function ProjectionBalanceChart({ state }) {
   const [ready, setReady] = useState(false)
-  const model = projectionBalanceBarsModel(state, 3)
+  const model = projectionBalanceBarsModel(state, PROJECTION_HORIZON_MONTHS)
 
   useEffect(() => {
     let cancelled = false
@@ -31,8 +35,7 @@ export function ProjectionBalanceChart({ state }) {
       <div className="moni-card__head moni-chart-card__head">
         <h3 className="moni-card__title">Saldo proyectado</h3>
         <p className="moni-card__sub">
-          Cuánto te quedaría cada mes con los datos actuales (misma escala entre
-          los tres).
+          Misma escala en los seis meses: compará rápido cómo evoluciona el saldo.
         </p>
       </div>
 
@@ -59,7 +62,9 @@ export function ProjectionBalanceChart({ state }) {
                 title={`${row.title}: ${formatMoney(row.balance)}`}
               />
             </div>
-            <span className="moni-proj-chart__col-label">{row.title}</span>
+            <span className="moni-proj-chart__col-label">
+              {projectionShortLabel(row.title)}
+            </span>
             <span className={`moni-proj-chart__col-val moni-proj-chart__col-val--${row.tone}`}>
               {formatMoney(row.balance)}
             </span>
