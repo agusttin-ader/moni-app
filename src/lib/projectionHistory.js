@@ -35,7 +35,7 @@ export function buildProjectionSnapshot(state) {
       title: row.title,
       balance: row.balance,
       incomes: row.incomes,
-      outflow: row.fixed + row.debts,
+      outflow: row.fixed + row.debts + row.daily,
     }),
   )
   return {
@@ -43,6 +43,7 @@ export function buildProjectionSnapshot(state) {
     incomes: month.incomes,
     fixed: month.fixed,
     debts: month.debts,
+    daily: month.daily,
     remaining: month.remaining,
     projection: rows,
   }

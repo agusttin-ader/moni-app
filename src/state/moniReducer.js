@@ -3,8 +3,25 @@ import {
   normalizeStartMonth,
 } from '../lib/calculations.js'
 
+function deriveOnboardingComplete(payload) {
+  if (payload?.onboardingComplete === true) return true
+  if (payload?.onboardingComplete === false) return false
+  const n =
+    (payload?.ingresos?.length ?? 0) +
+    (payload?.gastos?.length ?? 0) +
+    (payload?.deudas?.length ?? 0) +
+    (payload?.gastosDiarios?.length ?? 0)
+  return n > 0
+}
+
 export function createInitialState() {
-  return { ingresos: [], gastos: [], deudas: [] }
+  return {
+    ingresos: [],
+    gastos: [],
+    deudas: [],
+    gastosDiarios: [],
+    onboardingComplete: false,
+  }
 }
 
 function genId() {
@@ -22,32 +39,51 @@ export function moniReducer(state, action) {
         ingresos: Array.isArray(p?.ingresos) ? p.ingresos : base.ingresos,
         gastos: Array.isArray(p?.gastos) ? p.gastos : base.gastos,
         deudas: Array.isArray(p?.deudas) ? p.deudas : base.deudas,
+        gastosDiarios: Array.isArray(p?.gastosDiarios)
+          ? p.gastosDiarios
+          : base.gastosDiarios,
+        onboardingComplete: deriveOnboardingComplete(p),
       }
     }
+    case 'onboarding/complete':
+      return { ...state, onboardingComplete: true }
     case 'income/add': {
-      const { name, amount, frequency = 'mensual' } = action.payload
+      const { name, amount, frequency = 'mensual', effectiveFromMonth } =
+        action.payload
+      const eff =
+        effectiveFromMonth != null && String(effectiveFromMonth).trim() !== ''
+          ? normalizeStartMonth(effectiveFromMonth)
+          : ''
       const item = {
         id: genId(),
         name: String(name),
         amount: Number(amount) || 0,
         frequency: String(frequency),
+        ...(eff ? { effectiveFromMonth: eff } : {}),
       }
       return { ...state, ingresos: [...state.ingresos, item] }
     }
     case 'income/update': {
-      const { id, name, amount, frequency = 'mensual' } = action.payload
+      const { id, name, amount, frequency = 'mensual', effectiveFromMonth } =
+        action.payload
+      const eff =
+        effectiveFromMonth != null && String(effectiveFromMonth).trim() !== ''
+          ? normalizeStartMonth(effectiveFromMonth)
+          : ''
       return {
         ...state,
-        ingresos: state.ingresos.map((x) =>
-          x.id === id
-            ? {
-                ...x,
-                name: String(name),
-                amount: Number(amount) || 0,
-                frequency: String(frequency),
-              }
-            : x,
-        ),
+        ingresos: state.ingresos.map((x) => {
+          if (x.id !== id) return x
+          const next = {
+            ...x,
+            name: String(name),
+            amount: Number(amount) || 0,
+            frequency: String(frequency),
+          }
+          if (eff) next.effectiveFromMonth = eff
+          else delete next.effectiveFromMonth
+          return next
+        }),
       }
     }
     case 'income/delete':
@@ -57,21 +93,27 @@ export function moniReducer(state, action) {
       }
 
     case 'expense/add': {
-      const { name, amount } = action.payload
+      const { name, amount, categoryId = 'other' } = action.payload
       const item = {
         id: genId(),
         name: String(name),
         amount: Number(amount) || 0,
+        categoryId: String(categoryId ?? 'other'),
       }
       return { ...state, gastos: [...state.gastos, item] }
     }
     case 'expense/update': {
-      const { id, name, amount } = action.payload
+      const { id, name, amount, categoryId = 'other' } = action.payload
       return {
         ...state,
         gastos: state.gastos.map((x) =>
           x.id === id
-            ? { ...x, name: String(name), amount: Number(amount) || 0 }
+            ? {
+                ...x,
+                name: String(name),
+                amount: Number(amount) || 0,
+                categoryId: String(categoryId ?? 'other'),
+              }
             : x,
         ),
       }
@@ -89,8 +131,11 @@ export function moniReducer(state, action) {
         installmentCount,
         startMonth,
         paidInstallments = 0,
+        debtKind = 'loan',
       } = action.payload
       const count = Math.max(1, Math.floor(Number(installmentCount) || 1))
+      const kind =
+        debtKind === 'credit_card' || debtKind === 'loan' ? debtKind : 'loan'
       const item = {
         id: genId(),
         name: String(name),
@@ -98,6 +143,7 @@ export function moniReducer(state, action) {
         installmentCount: count,
         startMonth: normalizeStartMonth(startMonth),
         paidInstallments: clampPaidInstallments(paidInstallments, count),
+        debtKind: kind,
       }
       return { ...state, deudas: [...state.deudas, item] }
     }
@@ -109,7 +155,10 @@ export function moniReducer(state, action) {
         installmentCount,
         startMonth,
         paidInstallments = 0,
+        debtKind = 'loan',
       } = action.payload
+      const kind =
+        debtKind === 'credit_card' || debtKind === 'loan' ? debtKind : 'loan'
       return {
         ...state,
         deudas: state.deudas.map((x) => {
@@ -122,6 +171,7 @@ export function moniReducer(state, action) {
             installmentCount: count,
             startMonth: normalizeStartMonth(startMonth),
             paidInstallments: clampPaidInstallments(paidInstallments, count),
+            debtKind: kind,
           }
         }),
       }
@@ -130,6 +180,42 @@ export function moniReducer(state, action) {
       return {
         ...state,
         deudas: state.deudas.filter((x) => x.id !== action.payload.id),
+      }
+
+    case 'dailyExpense/add': {
+      const { amount, categoryId, date, note } = action.payload
+      const item = {
+        id: genId(),
+        amount: Number(amount) || 0,
+        categoryId: String(categoryId ?? 'other'),
+        date: String(date ?? '').slice(0, 10),
+        note: note != null ? String(note).trim() : '',
+      }
+      return { ...state, gastosDiarios: [...state.gastosDiarios, item] }
+    }
+    case 'dailyExpense/update': {
+      const { id, amount, categoryId, date, note } = action.payload
+      return {
+        ...state,
+        gastosDiarios: state.gastosDiarios.map((x) =>
+          x.id === id
+            ? {
+                ...x,
+                amount: Number(amount) || 0,
+                categoryId: String(categoryId ?? 'other'),
+                date: String(date ?? '').slice(0, 10),
+                note: note != null ? String(note).trim() : '',
+              }
+            : x,
+        ),
+      }
+    }
+    case 'dailyExpense/delete':
+      return {
+        ...state,
+        gastosDiarios: state.gastosDiarios.filter(
+          (x) => x.id !== action.payload.id,
+        ),
       }
 
     default:

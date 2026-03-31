@@ -13,6 +13,7 @@ function snapshotSignature(snapshot) {
     snapshot.incomes,
     snapshot.fixed,
     snapshot.debts,
+    snapshot.daily,
     snapshot.remaining,
     snapshot.projection?.map((p) => p.balance).join('|'),
   ].join(':')

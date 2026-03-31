@@ -7,6 +7,7 @@ export function RemainingSummary({ state }) {
   const i = useAnimatedNumber(b.incomes)
   const f = useAnimatedNumber(b.fixed)
   const d = useAnimatedNumber(b.debts)
+  const v = useAnimatedNumber(b.daily)
   const r = useAnimatedNumber(b.remaining)
 
   return (
@@ -20,6 +21,10 @@ export function RemainingSummary({ state }) {
         <li>
           <span>Gastos fijos</span>
           <strong>{formatMoney(f)}</strong>
+        </li>
+        <li>
+          <span>Gastos variables (mes)</span>
+          <strong>{formatMoney(v)}</strong>
         </li>
         <li>
           <span>Cuotas del mes</span>

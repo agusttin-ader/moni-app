@@ -1,8 +1,9 @@
 import { lazy, Suspense, useCallback, useState } from 'react'
+import { UnifiedExpenseSheet } from './UnifiedExpenseSheet.jsx'
 import { computeMonthBalance } from '../lib/calculations.js'
 import { CurrentMonthHero } from './CurrentMonthHero.jsx'
 import { DebtsPanel } from './DebtsPanel.jsx'
-import { ExpensesPanel } from './ExpensesPanel.jsx'
+import { GastosPanel } from './GastosPanel.jsx'
 import { AppFooter } from './AppFooter.jsx'
 import { Header } from './Header.jsx'
 import { IncomesPanel } from './IncomesPanel.jsx'
@@ -21,20 +22,20 @@ const ProjectionHistoryPanel = lazy(() =>
 )
 const DashboardInsightsLazy = lazy(() => import('./DashboardInsightsLazy.jsx'))
 
-function shouldPlayMobileAppEnter() {
+/** Solo app instalada (PWA / “Agregar a inicio”): entrada completa al abrir. */
+function shouldPlayInstalledAppEnter() {
   if (typeof window === 'undefined') return false
   try {
-    const narrow = window.matchMedia('(max-width: 720px)').matches
     const nav = window.navigator
     const iosStandalone =
       'standalone' in nav &&
       /** @type {Navigator & { standalone?: boolean }} */ (nav).standalone ===
-        true
-    const standalone =
+      true
+    return (
       window.matchMedia('(display-mode: standalone)').matches ||
       window.matchMedia('(display-mode: fullscreen)').matches ||
       iosStandalone
-    return narrow || standalone
+    )
   } catch {
     return false
   }
@@ -44,8 +45,8 @@ export function Dashboard({ state, dispatch, user, onLogout }) {
   const { remaining } = computeMonthBalance(state, 0)
   const [profileOpen, setProfileOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
-  /** Entrada suave en móvil o app instalada (solo presentación). */
-  const [mobileAppEnter] = useState(() => shouldPlayMobileAppEnter())
+  /** Entrada suave al abrir la app descargada / instalada (solo presentación). */
+  const [installedAppEnter] = useState(() => shouldPlayInstalledAppEnter())
 
   const onOpenProfile = useCallback(() => setProfileOpen(true), [])
   const onCloseProfile = useCallback(() => setProfileOpen(false), [])
@@ -66,9 +67,20 @@ export function Dashboard({ state, dispatch, user, onLogout }) {
     error: projectionHistoryError,
   } = useProjectionHistory(user, state)
 
+  const [unifiedOpen, setUnifiedOpen] = useState(false)
+  const [unifiedKey, setUnifiedKey] = useState(0)
+  const [unifiedOpts, setUnifiedOpts] = useState({})
+
+  const openUnified = useCallback((opts = {}) => {
+    setUnifiedOpts(opts)
+    setUnifiedKey((k) => k + 1)
+    setUnifiedOpen(true)
+  }, [])
+  const closeUnified = useCallback(() => setUnifiedOpen(false), [])
+
   return (
     <div
-      className={`moni-app${mobileAppEnter ? ' moni-app--enter' : ''}`.trim()}
+      className={`moni-app${installedAppEnter ? ' moni-app--enter' : ''}`.trim()}
     >
       <Header
         user={user}
@@ -106,8 +118,8 @@ export function Dashboard({ state, dispatch, user, onLogout }) {
       ) : null}
       <main className="moni-main">
         <div className="moni-layout">
-          <div className="moni-layout__primary">
-            <div className="moni-anim-in">
+          <div className="moni-layout__main">
+            <div className="moni-anim-in moni-layout__main-block moni-layout__main-block--overview">
               <section className="moni-dashboard-overview">
                 <div className="moni-dashboard-overview__hero">
                   <CurrentMonthHero remaining={remaining} />
@@ -118,7 +130,7 @@ export function Dashboard({ state, dispatch, user, onLogout }) {
                 </div>
               </section>
             </div>
-            <div className="moni-anim-in">
+            <div className="moni-anim-in moni-layout__main-block moni-layout__main-block--insights">
               <section className="moni-dashboard-insights">
                 <Suspense
                   fallback={
@@ -133,19 +145,40 @@ export function Dashboard({ state, dispatch, user, onLogout }) {
               </section>
             </div>
           </div>
-
           <aside className="moni-layout__aside" id="listas">
             <div className="moni-anim-in">
-              <IncomesPanel items={state.ingresos} dispatch={dispatch} />
+              <IncomesPanel
+                items={state.ingresos}
+                dispatch={dispatch}
+                expandFormSignal={0}
+              />
             </div>
             <div className="moni-anim-in">
-              <ExpensesPanel items={state.gastos} dispatch={dispatch} />
+              <GastosPanel
+                gastos={state.gastos}
+                gastosDiarios={state.gastosDiarios}
+                dispatch={dispatch}
+                onOpenUnified={openUnified}
+              />
             </div>
             <div className="moni-anim-in">
-              <DebtsPanel items={state.deudas} dispatch={dispatch} />
+              <DebtsPanel
+                items={state.deudas}
+                dispatch={dispatch}
+                expandFormSignal={0}
+              />
             </div>
           </aside>
         </div>
+        <UnifiedExpenseSheet
+          open={unifiedOpen}
+          onClose={closeUnified}
+          dispatch={dispatch}
+          gastos={state.gastos}
+          gastosDiarios={state.gastosDiarios}
+          sheetKey={unifiedKey}
+          sheetOpts={unifiedOpts}
+        />
       </main>
       <AppFooter variant="app" />
     </div>

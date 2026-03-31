@@ -1,4 +1,6 @@
-/** @typedef {{ id: string, name: string, amount: number, frequency: string }} Income */
+import { expenseCategoryById } from './expenseCategories.js'
+
+/** @typedef {{ id: string, name: string, amount: number, frequency: string, effectiveFromMonth?: string }} Income */
 /** @typedef {{ id: string, name: string, amount: number }} Expense */
 /** @typedef {{ id: string, name: string, totalAmount: number, installmentCount: number, startMonth: string, paidInstallments: number }} Debt */
 
@@ -64,14 +66,41 @@ export function debtPaysInMonth(debt, targetMonthIndex) {
   return targetMonthIndex >= M0 + P && targetMonthIndex <= M0 + N - 1
 }
 
-export function totalMonthlyIncome(incomes) {
+/**
+ * Suma ingresos mensuales que aplican al mes calendario `targetMonthIndex`
+ * (índice absoluto año×12+m como en yearMonthToIndex).
+ * Si un ingreso tiene `effectiveFromMonth` (YYYY-MM), solo cuenta desde ese mes inclusive.
+ * Si `targetMonthIndex` es null/undefined, no se aplica el filtro de fecha (compatibilidad).
+ */
+export function totalMonthlyIncome(incomes, targetMonthIndex) {
   return (incomes ?? []).reduce((sum, i) => {
     if (!i || typeof i !== 'object') return sum
     const amt = Number(i.amount) || 0
     const freq = String(i.frequency ?? 'mensual').toLowerCase()
     if (freq !== 'mensual') return sum
+    const raw = i.effectiveFromMonth
+    if (
+      raw != null &&
+      String(raw).trim() !== '' &&
+      targetMonthIndex != null &&
+      Number.isFinite(targetMonthIndex)
+    ) {
+      const fromIdx = yearMonthToIndex(normalizeStartMonth(raw))
+      if (fromIdx != null && targetMonthIndex < fromIdx) return sum
+    }
     return sum + amt
   }, 0)
+}
+
+/** Desplaza YYYY-MM por `delta` meses (delta negativo = meses atrás). */
+export function addMonthsToYearMonth(ym, delta) {
+  const idx = yearMonthToIndex(normalizeStartMonth(ym))
+  if (idx == null || !Number.isFinite(delta)) return currentYearMonthString()
+  const t = idx + Math.trunc(delta)
+  if (t < 0) return '1970-01'
+  const y = Math.floor(t / 12)
+  const mo = (t % 12) + 1
+  return `${y}-${String(mo).padStart(2, '0')}`
 }
 
 export function totalFixedExpenses(expenses) {
@@ -92,12 +121,39 @@ export function totalDebtPaymentsForMonth(debts, monthOffset) {
   return sum
 }
 
+/** Mes calendario YYYY-MM para el desfase respecto del mes actual (0 = este mes). */
+export function monthKeyForOffset(monthOffset) {
+  const base = yearMonthToIndex(currentYearMonthString())
+  if (base == null) return null
+  const target = base + monthOffset
+  const y = Math.floor(target / 12)
+  const mo = (target % 12) + 1
+  return `${y}-${String(mo).padStart(2, '0')}`
+}
+
+export function totalDailyExpensesForMonthKey(gastosDiarios, yearMonth) {
+  if (!yearMonth) return 0
+  return (gastosDiarios ?? []).reduce((sum, g) => {
+    if (!g || typeof g !== 'object') return sum
+    const d = String(g.date ?? '').slice(0, 7)
+    if (d !== yearMonth) return sum
+    return sum + (Number(g.amount) || 0)
+  }, 0)
+}
+
 export function computeMonthBalance(state, monthOffset) {
-  const incomes = totalMonthlyIncome(state?.ingresos)
+  const base = yearMonthToIndex(currentYearMonthString())
+  if (base == null) {
+    return { incomes: 0, fixed: 0, debts: 0, daily: 0, remaining: 0 }
+  }
+  const targetIdx = base + monthOffset
+  const incomes = totalMonthlyIncome(state?.ingresos, targetIdx)
   const fixed = totalFixedExpenses(state?.gastos)
   const debts = totalDebtPaymentsForMonth(state?.deudas, monthOffset)
-  const remaining = incomes - fixed - debts
-  return { incomes, fixed, debts, remaining }
+  const ym = monthKeyForOffset(monthOffset)
+  const daily = ym ? totalDailyExpensesForMonthKey(state?.gastosDiarios, ym) : 0
+  const remaining = incomes - fixed - debts - daily
+  return { incomes, fixed, debts, daily, remaining }
 }
 
 const PROJECTION_KEYS = ['actual', 'siguiente', 'siguiente+1']
@@ -173,7 +229,8 @@ export function projectionDetailRows(state, count = PROJECTION_HORIZON_MONTHS) {
   let maxFlow = 0
   for (let i = 0; i < count; i++) {
     const b = computeMonthBalance(state, i)
-    const flow = Math.max(b.incomes, b.fixed + b.debts, Math.abs(b.remaining))
+    const outM = b.fixed + b.debts + b.daily
+    const flow = Math.max(b.incomes, outM, Math.abs(b.remaining))
     maxFlow = Math.max(maxFlow, flow)
     const p = proj[i]
     rows.push({
@@ -183,13 +240,14 @@ export function projectionDetailRows(state, count = PROJECTION_HORIZON_MONTHS) {
       incomes: b.incomes,
       fixed: b.fixed,
       debts: b.debts,
+      daily: b.daily,
       flowWeight: 0,
     })
   }
   for (const row of rows) {
     const flow = Math.max(
       row.incomes,
-      row.fixed + row.debts,
+      row.fixed + row.debts + row.daily,
       Math.abs(row.balance),
     )
     row.flowWeight = maxFlow > 0 ? Math.max(0.08, flow / maxFlow) : 0.08
@@ -308,23 +366,49 @@ function debtSeverityForColor(di, stats) {
   )
 }
 
+function dailyAggregatesForMonth(state, yearMonth) {
+  const map = new Map()
+  for (const g of state?.gastosDiarios ?? []) {
+    if (!g || typeof g !== 'object') continue
+    if (String(g.date ?? '').slice(0, 7) !== yearMonth) continue
+    const amt = Number(g.amount) || 0
+    if (amt <= 0) continue
+    const cid = String(g.categoryId ?? 'other')
+    const prev = map.get(cid) ?? { amount: 0, categoryId: cid }
+    prev.amount += amt
+    map.set(cid, prev)
+  }
+  return [...map.values()].map((x) => {
+    const cat = expenseCategoryById(x.categoryId)
+    return {
+      id: `daily-${x.categoryId}`,
+      label: `Variable · ${cat.emoji} ${cat.short}`,
+      amount: x.amount,
+    }
+  })
+}
+
 /**
  * @returns {{ segments: Array<{ id: string, kind: string, label: string, amount: number, fraction: number, pctLabel: string, color: string }>, centerLabel: string, centerAmount: number, variant: string, hint: string | null, percentContext: 'ingreso' | 'egreso' }}
  */
 function monthFlowDonutFromState(state) {
   const b = computeMonthBalance(state, 0)
-  const { incomes, fixed, debts: debtsSum, remaining } = b
-  const outflow = fixed + debtsSum
-  const baseIdx = yearMonthToIndex(currentYearMonthString())
+  const { incomes, fixed, debts: debtsSum, remaining, daily } = b
+  const ymNow = currentYearMonthString()
+  const dailyItems = dailyAggregatesForMonth(state, ymNow)
+  const outflow = fixed + debtsSum + daily
+  const baseIdx = yearMonthToIndex(ymNow)
 
   const expenseItems = []
   for (const e of state?.gastos ?? []) {
     if (!e || typeof e !== 'object') continue
     const amt = Number(e.amount) || 0
     if (amt <= 0) continue
+    const cat = expenseCategoryById(String(e.categoryId ?? 'other'))
+    const nm = String(e.name ?? 'Gasto').trim() || 'Gasto'
     expenseItems.push({
       id: `exp-${e.id}`,
-      label: String(e.name ?? 'Gasto').trim() || 'Gasto',
+      label: `${cat.emoji} ${nm}`,
       amount: amt,
     })
   }
@@ -338,9 +422,11 @@ function monthFlowDonutFromState(state) {
     if (per <= 0) continue
     const n = Math.max(1, Math.floor(Number(d.installmentCount) || 1))
     const totalAmt = Number(d.totalAmount) || 0
+    const isCard = String(d.debtKind ?? 'loan') === 'credit_card'
+    const nm = String(d.name ?? 'Deuda').trim() || 'Deuda'
     debtItems.push({
       id: `debt-${d.id}`,
-      label: String(d.name ?? 'Deuda').trim() || 'Deuda',
+      label: isCard ? `💳 ${nm}` : nm,
       amount: per,
       installmentCount: n,
       totalAmount: totalAmt,
@@ -384,6 +470,24 @@ function monthFlowDonutFromState(state) {
     }
   }
 
+  const pushDailySegments = (parts, denom) => {
+    let colorIdx = expenseItems.length + debtItems.length
+    for (const di of dailyItems) {
+      const f = di.amount / denom
+      if (f <= 1e-9) continue
+      parts.push({
+        id: di.id,
+        kind: 'daily',
+        label: di.label,
+        amount: di.amount,
+        fraction: f,
+        pctLabel: mkDonutPctLabel(f),
+        color: DONUT_EXPENSE_PALETTE[colorIdx % DONUT_EXPENSE_PALETTE.length],
+      })
+      colorIdx += 1
+    }
+  }
+
   if (incomes <= 0 && outflow <= 0) {
     return {
       segments: [
@@ -410,6 +514,7 @@ function monthFlowDonutFromState(state) {
     const parts = []
     pushExpenseSegments(parts, denom)
     pushDebtSegments(parts, denom)
+    pushDailySegments(parts, denom)
     const segments =
       parts.length > 0
         ? parts
@@ -440,6 +545,7 @@ function monthFlowDonutFromState(state) {
     const parts = []
     pushExpenseSegments(parts, denom)
     pushDebtSegments(parts, denom)
+    pushDailySegments(parts, denom)
     if (remaining > 0) {
       const rf = remaining / denom
       if (rf > 1e-9) {
@@ -480,6 +586,7 @@ function monthFlowDonutFromState(state) {
   const parts = []
   pushExpenseSegments(parts, denom)
   pushDebtSegments(parts, denom)
+  pushDailySegments(parts, denom)
   normalizeDonutFractions(parts)
   const segments =
     parts.length > 0
@@ -508,7 +615,7 @@ function monthFlowDonutFromState(state) {
 /** Resumen del mes + modelo para gráfico de dona (reparto del flujo). */
 export function breakdownFlowChartModel(state) {
   const b = computeMonthBalance(state, 0)
-  const outflow = b.fixed + b.debts
+  const outflow = b.fixed + b.debts + b.daily
   let marginPct = null
   if (b.incomes > 0) marginPct = (b.remaining / b.incomes) * 100
   return {

@@ -32,7 +32,7 @@ export function BreakdownFlowChart({ state }) {
       cancelAnimationFrame(id1)
       cancelAnimationFrame(id2)
     }
-  }, [state.ingresos, state.gastos, state.deudas])
+  }, [state.ingresos, state.gastos, state.deudas, state.gastosDiarios])
 
   const pctLabel =
     m.marginPct != null && Number.isFinite(m.marginPct)

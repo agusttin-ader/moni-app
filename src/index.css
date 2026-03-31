@@ -21,7 +21,29 @@
   --eth-shadow: 0 26px 70px rgba(0, 0, 0, 0.45);
   --eth-font: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   --moni-ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+  --moni-ease-out-soft: cubic-bezier(0.33, 1, 0.68, 1);
+  --moni-app-enter-ease: cubic-bezier(0.16, 1, 0.3, 1);
   --moni-tap-fast: 0.15s;
+  --moni-motion-fast: 0.2s;
+  --moni-motion-medium: 0.45s;
+  --moni-motion-slow: 0.75s;
+  /* Ritmo vertical en pantallas estrechas (sobrescrito en App.css si hace falta) */
+  --moni-space-section: clamp(0.88rem, 3vw, 1.12rem);
+  --moni-space-panel-y: clamp(1rem, 3.5vw, 1.2rem);
+  /* Formularios: label ↔ control y stack */
+  --moni-space-field: 0.48rem;
+  --moni-space-form-stack: 0.92rem;
+  --moni-space-form-actions: 0.72rem;
+  /* Jerarquía tipográfica (UI densa pero legible) */
+  --moni-type-label: 0.72rem;
+  --moni-type-body: 0.9rem;
+  --moni-type-panel-title: 1rem;
+}
+
+@media (max-width: 720px) {
+  body {
+    line-height: 1.55;
+  }
 }
 
 *,
@@ -44,6 +66,7 @@ html {
 
 body {
   margin: 0;
+  line-height: 1.5;
   font-family: var(--eth-font);
   color: var(--eth-text);
   background:

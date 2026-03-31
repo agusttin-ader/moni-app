@@ -163,7 +163,8 @@ export function Projection({ state }) {
         <h3 className="moni-card__title">Flujo proyectado</h3>
         <p className="moni-card__sub">
           Línea según <strong>saldo neto</strong> de cada mes (ingresos − gastos
-          fijos − cuotas). Los montos de abajo siguen a cada punto del gráfico.
+          fijos − variables del mes − cuotas). Los montos de abajo siguen a cada
+          punto del gráfico.
         </p>
       </div>
 
@@ -271,8 +272,10 @@ export function Projection({ state }) {
                   <div className="moni-projection-item__drawer moni-projection-item__drawer--open">
                     <div className="moni-projection-item__drawer-inner">
                       <p className="moni-projection-item__meta">
-                        Ingresos {formatMoney(row.incomes)} · Egresos{' '}
-                        {formatMoney(row.fixed + row.debts)}
+                        Ingresos {formatMoney(row.incomes)} · Fijos{' '}
+                        {formatMoney(row.fixed)} · Variables{' '}
+                        {formatMoney(row.daily)} · Cuotas{' '}
+                        {formatMoney(row.debts)}
                       </p>
                     </div>
                   </div>

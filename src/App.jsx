@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import './App.css'
 import { AppFooter } from './components/AppFooter.jsx'
+import { OnboardingWizard } from './components/OnboardingWizard.jsx'
 import { useAuth } from './hooks/useAuth.js'
 import { useMoniState } from './hooks/useMoniState.js'
 import { logout } from './lib/auth.js'
@@ -58,7 +59,7 @@ const MOTIVATION_QUOTES = [
 
 export default function App() {
   const { user, loading: authLoading } = useAuth()
-  const { state, dispatch } = useMoniState(user, authLoading)
+  const { state, dispatch, dataReady } = useMoniState(user, authLoading)
   const [quoteIndex, setQuoteIndex] = useState(0)
   const [logoutBusy, setLogoutBusy] = useState(false)
 
@@ -187,6 +188,21 @@ export default function App() {
         </div>
         <AppFooter variant="auth" />
       </div>
+    )
+  }
+
+  if (!dataReady) {
+    return (
+      <div className="moni-loading-shell" role="status" aria-live="polite">
+        <div className="moni-loading-spinner" aria-hidden />
+        <p className="moni-loading-text">Sincronizando tus datos...</p>
+      </div>
+    )
+  }
+
+  if (!state.onboardingComplete) {
+    return (
+      <OnboardingWizard dispatch={dispatch} onLogout={handleLogout} />
     )
   }
 

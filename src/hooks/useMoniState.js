@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useRef } from 'react'
+import { useEffect, useReducer, useRef, useState } from 'react'
 import {
   getUserData,
   moniStatePersistenceKey,
@@ -14,6 +14,7 @@ const SAVE_DEBOUNCE_MS = 650
  */
 export function useMoniState(user, authLoading) {
   const [state, dispatch] = useReducer(moniReducer, undefined, createInitialState)
+  const [dataReady, setDataReady] = useState(false)
   const hydratedForUid = useRef(null)
   const lastPersistedKey = useRef(null)
   const saveTimerRef = useRef(0)
@@ -22,6 +23,7 @@ export function useMoniState(user, authLoading) {
     if (authLoading) return
 
     if (!user?.uid) {
+      queueMicrotask(() => setDataReady(false))
       hydratedForUid.current = null
       lastPersistedKey.current = null
       if (saveTimerRef.current) {
@@ -33,6 +35,7 @@ export function useMoniState(user, authLoading) {
     }
 
     const uid = user.uid
+    queueMicrotask(() => setDataReady(false))
     hydratedForUid.current = null
     lastPersistedKey.current = null
     let cancelled = false
@@ -45,13 +48,16 @@ export function useMoniState(user, authLoading) {
         if (!cancelled) {
           hydratedForUid.current = uid
           lastPersistedKey.current = moniStatePersistenceKey(data)
+          setDataReady(true)
         }
       } catch (e) {
         console.error(e)
         if (!cancelled) {
-          dispatch({ type: 'state/replace', payload: createInitialState() })
+          const fallback = createInitialState()
+          dispatch({ type: 'state/replace', payload: fallback })
           hydratedForUid.current = uid
-          lastPersistedKey.current = moniStatePersistenceKey(createInitialState())
+          lastPersistedKey.current = moniStatePersistenceKey(fallback)
+          setDataReady(true)
         }
       }
     })()
@@ -86,5 +92,5 @@ export function useMoniState(user, authLoading) {
     }
   }, [state, authLoading, user?.uid])
 
-  return { state, dispatch }
+  return { state, dispatch, dataReady }
 }

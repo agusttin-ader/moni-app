@@ -1,21 +1,28 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNarrowViewport } from '../hooks/useNarrowViewport.js'
 import { CollapsiblePanelDetail } from './CollapsiblePanelDetail.jsx'
 import { amountFieldError, nameFieldError } from '../lib/formValidation.js'
-import { formatMoney } from '../lib/format.js'
+import { formatMoney, formatYearMonth } from '../lib/format.js'
 
-export function IncomesPanel({ items, dispatch }) {
+export function IncomesPanel({ items, dispatch, expandFormSignal = 0 }) {
   const narrow = useNarrowViewport()
   const [addFormOpen, setAddFormOpen] = useState(false)
   const [name, setName] = useState('')
   const [amount, setAmount] = useState('')
+  const [effectiveFromMonth, setEffectiveFromMonth] = useState('')
   const [error, setError] = useState(null)
   const [editingId, setEditingId] = useState(null)
+
+  useEffect(() => {
+    if (expandFormSignal <= 0) return
+    queueMicrotask(() => setAddFormOpen(true))
+  }, [expandFormSignal])
 
   const reset = () => {
     setEditingId(null)
     setName('')
     setAmount('')
+    setEffectiveFromMonth('')
     setError(null)
   }
 
@@ -28,24 +35,24 @@ export function IncomesPanel({ items, dispatch }) {
       return
     }
     setError(null)
+    const payloadBase = {
+      name: name.trim(),
+      amount: Number(String(amount).replace(',', '.')),
+      frequency: 'mensual',
+      effectiveFromMonth: effectiveFromMonth.trim() || undefined,
+    }
     if (editingId) {
       dispatch({
         type: 'income/update',
         payload: {
           id: editingId,
-          name: name.trim(),
-          amount: Number(String(amount).replace(',', '.')),
-          frequency: 'mensual',
+          ...payloadBase,
         },
       })
     } else {
       dispatch({
         type: 'income/add',
-        payload: {
-          name: name.trim(),
-          amount: Number(String(amount).replace(',', '.')),
-          frequency: 'mensual',
-        },
+        payload: payloadBase,
       })
     }
     reset()
@@ -55,6 +62,9 @@ export function IncomesPanel({ items, dispatch }) {
     setEditingId(x.id)
     setName(x.name)
     setAmount(String(x.amount))
+    setEffectiveFromMonth(
+      x.effectiveFromMonth != null ? String(x.effectiveFromMonth) : '',
+    )
     setError(null)
   }
 
@@ -87,6 +97,21 @@ export function IncomesPanel({ items, dispatch }) {
           />
         </label>
       </div>
+      <label className="moni-field">
+        <span className="moni-field__label">Disponible desde (opcional)</span>
+        <input
+          type="month"
+          className="moni-input moni-input--month"
+          name="income-from-month"
+          value={effectiveFromMonth}
+          onChange={(e) => setEffectiveFromMonth(e.target.value)}
+        />
+      </label>
+      <p className="moni-debt-micro">
+        Si lo dejás vacío, Moni cuenta este ingreso en <strong>todos</strong> los meses de la
+        proyección. Si recién vas a cobrar a partir de un mes (cambio de laburo, aguinaldo, etc.),
+        elegí ese mes: hasta entonces no entra en el saldo mensual.
+      </p>
       {error ? (
         <p className="moni-form-error" role="alert">
           {error}
@@ -110,7 +135,7 @@ export function IncomesPanel({ items, dispatch }) {
   )
 
   return (
-    <section className="moni-panel" aria-label="Ingresos">
+    <section className="moni-panel" id="moni-panel-ingresos" aria-label="Ingresos">
       <h3 className="moni-panel__title">Ingresos</h3>
       {narrow ? (
         <CollapsiblePanelDetail
@@ -140,6 +165,9 @@ export function IncomesPanel({ items, dispatch }) {
                   <div className="moni-list__name">{x.name}</div>
                   <div className="moni-list__meta">
                     {formatMoney(x.amount)} · mensual
+                    {x.effectiveFromMonth
+                      ? ` · desde ${formatYearMonth(x.effectiveFromMonth)}`
+                      : null}
                   </div>
                 </div>
                 <div className="moni-list__actions">

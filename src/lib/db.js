@@ -1,4 +1,5 @@
 import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { normalizeStartMonth } from './calculations.js'
 import { db } from './firebase.js'
 
 function userDocRef(uid) {
@@ -10,6 +11,8 @@ function emptyUserData() {
     ingresos: [],
     gastos: [],
     deudas: [],
+    gastosDiarios: [],
+    onboardingComplete: false,
   }
 }
 
@@ -20,10 +23,49 @@ function requireDb() {
 }
 
 function normalizeUserPayload(raw) {
+  const ingresos = Array.isArray(raw.ingresos)
+    ? raw.ingresos.map((inc) => {
+        if (!inc || typeof inc !== 'object') return inc
+        const eff = inc.effectiveFromMonth
+        if (eff == null || String(eff).trim() === '') return inc
+        return {
+          ...inc,
+          effectiveFromMonth: normalizeStartMonth(eff),
+        }
+      })
+    : []
+  const gastos = Array.isArray(raw.gastos)
+    ? raw.gastos.map((g) => ({
+        ...g,
+        categoryId:
+          g && typeof g === 'object' && g.categoryId != null
+            ? String(g.categoryId)
+            : 'other',
+      }))
+    : []
+  const deudas = Array.isArray(raw.deudas)
+    ? raw.deudas.map((d) => ({
+        ...d,
+        debtKind:
+          d && typeof d === 'object' && d.debtKind === 'credit_card'
+            ? 'credit_card'
+            : 'loan',
+      }))
+    : []
+  const gastosDiarios = Array.isArray(raw.gastosDiarios)
+    ? raw.gastosDiarios
+    : []
+  let onboardingComplete = raw.onboardingComplete
+  if (onboardingComplete !== true && onboardingComplete !== false) {
+    onboardingComplete =
+      ingresos.length + gastos.length + deudas.length + gastosDiarios.length > 0
+  }
   return {
-    ingresos: Array.isArray(raw.ingresos) ? raw.ingresos : [],
-    gastos: Array.isArray(raw.gastos) ? raw.gastos : [],
-    deudas: Array.isArray(raw.deudas) ? raw.deudas : [],
+    ingresos,
+    gastos,
+    deudas,
+    gastosDiarios,
+    onboardingComplete,
   }
 }
 
@@ -39,7 +81,7 @@ export function moniStatePersistenceKey(state) {
 /**
  * Lee el documento users/{uid}. Si no existe, devuelve listas vacías.
  * @param {string} uid
- * @returns {Promise<{ ingresos: unknown[], gastos: unknown[], deudas: unknown[] }>}
+ * @returns {Promise<ReturnType<typeof normalizeUserPayload>>}
  */
 export async function getUserData(uid) {
   requireDb()
