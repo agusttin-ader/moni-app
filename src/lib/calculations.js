@@ -1,7 +1,7 @@
 import { expenseCategoryById } from './expenseCategories.js'
 
 /** @typedef {{ id: string, name: string, amount: number, frequency: string, effectiveFromMonth?: string }} Income */
-/** @typedef {{ id: string, name: string, amount: number }} Expense */
+/** @typedef {{ id: string, name: string, amount: number, frequency?: string, startMonth?: string }} Expense */
 /** @typedef {{ id: string, name: string, totalAmount: number, installmentCount: number, startMonth: string, paidInstallments: number }} Debt */
 
 export function currentYearMonthString(date = new Date()) {
@@ -106,6 +106,35 @@ export function addMonthsToYearMonth(ym, delta) {
 export function totalFixedExpenses(expenses) {
   return (expenses ?? []).reduce((sum, e) => {
     if (!e || typeof e !== 'object') return sum
+    return sum + (Number(e.amount) || 0)
+  }, 0)
+}
+
+export function fixedExpenseIntervalMonths(expense) {
+  const freq = String(expense?.frequency ?? 'mensual').toLowerCase()
+  if (freq === 'bimestral') return 2
+  if (freq === 'trimestral') return 3
+  if (freq === 'semestral') return 6
+  if (freq === 'anual') return 12
+  return 1
+}
+
+export function fixedExpensePaysInMonth(expense, targetMonthIndex) {
+  if (!expense || typeof expense !== 'object') return false
+  if (targetMonthIndex == null || !Number.isFinite(targetMonthIndex)) return true
+  const interval = fixedExpenseIntervalMonths(expense)
+  if (interval <= 1) return true
+  const anchor = yearMonthToIndex(
+    normalizeStartMonth(expense.startMonth || currentYearMonthString()),
+  )
+  if (anchor == null || targetMonthIndex < anchor) return false
+  return (targetMonthIndex - anchor) % interval === 0
+}
+
+export function totalFixedExpensesForMonth(expenses, targetMonthIndex) {
+  return (expenses ?? []).reduce((sum, e) => {
+    if (!e || typeof e !== 'object') return sum
+    if (!fixedExpensePaysInMonth(e, targetMonthIndex)) return sum
     return sum + (Number(e.amount) || 0)
   }, 0)
 }
@@ -483,7 +512,7 @@ export function goalAdviceItems(state) {
     })
   }
 
-  return items.sort((a, b) => b.priority - a.priority).slice(0, 4)
+  return items.sort((a, b) => b.priority - a.priority).slice(0, 3)
 }
 
 export function goalAdviceSummary(goal, items, formatMoneyFn) {
@@ -565,12 +594,16 @@ export function computeMonthBalance(state, monthOffset) {
   }
   const targetIdx = base + monthOffset
   const incomes = totalMonthlyIncome(state?.ingresos, targetIdx)
-  const fixed = totalFixedExpenses(state?.gastos)
+  const fixed = totalFixedExpensesForMonth(state?.gastos, targetIdx)
   const debts = totalDebtPaymentsForMonth(state?.deudas, monthOffset)
   const variable = projectedVariableExpensesInfo(state, monthOffset)
   const daily = variable.amount
   const remaining = incomes - fixed - debts - daily
   return { incomes, fixed, debts, daily, dailySource: variable.source, remaining }
+}
+
+function clamp01(value) {
+  return Math.max(0, Math.min(1, value))
 }
 
 const PROJECTION_KEYS = ['actual', 'siguiente', 'siguiente+1']
@@ -673,11 +706,18 @@ export function projectionDetailRows(state, count = PROJECTION_HORIZON_MONTHS) {
   return rows
 }
 
-export function currentMonthHeroModel(remaining) {
+export function currentMonthHeroModel(remaining, monthlyIncome = 0) {
   const r = Number(remaining) || 0
-  if (r > 0) return { tone: 'positive', absAmount: r }
-  if (r < 0) return { tone: 'negative', absAmount: -r }
-  return { tone: 'neutral', absAmount: 0 }
+  if (r > 0) return { tone: 'positive', absAmount: r, deficitSeverity: 'none' }
+  if (r < 0) {
+    const deficit = Math.abs(r)
+    const income = Math.max(0, Number(monthlyIncome) || 0)
+    const ratio = income > 0 ? deficit / income : 1
+    const deficitSeverity =
+      ratio >= 0.6 ? 'critical' : ratio >= 0.3 ? 'high' : 'mild'
+    return { tone: 'negative', absAmount: deficit, deficitSeverity }
+  }
+  return { tone: 'neutral', absAmount: 0, deficitSeverity: 'none' }
 }
 
 export function currentMonthHeroMessage(model, formattedAmount) {
@@ -692,8 +732,12 @@ export function currentMonthHeroClassSuffix(tone) {
   return tone
 }
 
-export function buildCurrentMonthHeroView(remaining, formatMoneyFn) {
-  const model = currentMonthHeroModel(remaining)
+export function buildCurrentMonthHeroView(
+  remaining,
+  formatMoneyFn,
+  monthlyIncome = 0,
+) {
+  const model = currentMonthHeroModel(remaining, monthlyIncome)
   const fmt =
     model.tone === 'neutral'
       ? formatMoneyFn(0)
@@ -709,6 +753,69 @@ export function buildCurrentMonthHeroView(remaining, formatMoneyFn) {
           ? 'Revisá gastos o ingresos para equilibrar.'
           : 'Ingresos y egresos se compensan.',
   }
+}
+
+export function debtPaymentPriorityItems(state, maxItems = 5) {
+  const current = computeMonthBalance(state, 0)
+  const monthIdx = yearMonthToIndex(currentYearMonthString())
+  if (monthIdx == null) return []
+  const debts = [...(state?.deudas ?? [])].filter(
+    (item) => !debtIsFinished(item) && debtPaysInMonth(item, monthIdx),
+  )
+  if (!debts.length) return []
+
+  const monthlyAmounts = debts.map((debt) => monthlyInstallmentAmount(debt))
+  const maxMonthly = Math.max(...monthlyAmounts, 1)
+  const income = Math.max(0, Number(current.incomes) || 0)
+  const maxItemsSafe = Math.max(1, Math.floor(Number(maxItems) || 5))
+
+  return debts
+    .map((debt) => {
+      const monthly = monthlyInstallmentAmount(debt)
+      const remInstallments = remainingInstallments(debt)
+      const debtKind = String(debt?.debtKind ?? 'loan')
+      const debtName = String(debt?.name ?? 'Deuda').trim() || 'Deuda'
+      const costFactor = clamp01(monthly / maxMonthly)
+      const kindFactor = debtKind === 'credit_card' ? 1 : 0.66
+      const urgencyFactor =
+        remInstallments <= 2 ? 1 : remInstallments <= 6 ? 0.72 : 0.45
+      const cashflowShare = income > 0 ? clamp01(monthly / income) : 1
+      const riskFactor = clamp01(
+        current.remaining < 0
+          ? cashflowShare * 0.7 + clamp01(Math.abs(current.remaining) / (income || monthly || 1)) * 0.3
+          : cashflowShare,
+      )
+      const score =
+        (costFactor * 0.34 +
+          kindFactor * 0.18 +
+          urgencyFactor * 0.22 +
+          riskFactor * 0.26) *
+        100
+      const roundedScore = Math.round(score)
+      const tone =
+        roundedScore >= 78
+          ? 'danger'
+          : roundedScore >= 58
+            ? 'warning'
+            : 'neutral'
+      return {
+        id: String(debt.id ?? debtName),
+        debtName,
+        debtKind,
+        monthly,
+        remInstallments,
+        cashflowShare,
+        score: roundedScore,
+        tone,
+        reasons: {
+          cost: Math.round(costFactor * 100),
+          urgency: Math.round(urgencyFactor * 100),
+          risk: Math.round(riskFactor * 100),
+        },
+      }
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, maxItemsSafe)
 }
 
 export function currentMonthHeroMeta(state, formatMoneyFn) {

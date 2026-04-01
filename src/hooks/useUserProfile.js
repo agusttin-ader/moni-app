@@ -3,6 +3,18 @@ import { friendlyFirestoreMessage } from '../lib/firebaseErrors.js'
 import { buildEmptyProfile, getUserProfile, saveUserProfile } from '../lib/profile.js'
 import { uploadAvatar } from '../lib/storage.js'
 
+function mergeProfileWithBase(base, remote) {
+  const firstName = typeof remote?.firstName === 'string' ? remote.firstName.trim() : ''
+  const lastName = typeof remote?.lastName === 'string' ? remote.lastName.trim() : ''
+  const avatarUrl = typeof remote?.avatarUrl === 'string' ? remote.avatarUrl.trim() : ''
+  return {
+    ...base,
+    firstName: firstName || base.firstName || '',
+    lastName: lastName || base.lastName || '',
+    avatarUrl: avatarUrl || base.avatarUrl || '',
+  }
+}
+
 export function useUserProfile(user) {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -32,7 +44,7 @@ export function useUserProfile(user) {
     getUserProfile(user.uid)
       .then((remote) => {
         if (cancelled) return
-        setProfile({ ...base, ...(remote ?? {}) })
+        setProfile(mergeProfileWithBase(base, remote ?? {}))
       })
       .catch((err) => {
         if (cancelled) return
@@ -54,7 +66,9 @@ export function useUserProfile(user) {
       setSaving(true)
       setError(null)
       try {
-        const payload = await saveUserProfile(user.uid, data)
+        const payload = await saveUserProfile(user.uid, {
+          avatarUrl: data?.avatarUrl,
+        })
         const { updatedAt: _updatedAt, ...rest } = payload ?? {}
         void _updatedAt
         setProfile((prev) => ({ ...(prev ?? {}), ...rest }))

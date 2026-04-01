@@ -3,7 +3,7 @@ export const EXPENSE_CATEGORIES = [
   { id: 'food', label: 'Alimentación', short: 'Comida', emoji: '🛒' },
   { id: 'transport', label: 'Transporte', short: 'Movilidad', emoji: '🚗' },
   { id: 'home', label: 'Hogar y servicios', short: 'Hogar', emoji: '🏠' },
-  { id: 'tech', label: 'Tecnología y suscripciones', short: 'Tech', emoji: '💻' },
+  { id: 'tech', label: 'Mascotas', short: 'Mascotas', emoji: '🐾' },
   { id: 'health', label: 'Salud y bienestar', short: 'Salud', emoji: '💊' },
   { id: 'leisure', label: 'Ocio y salidas', short: 'Ocio', emoji: '🎬' },
   { id: 'education', label: 'Educación', short: 'Estudio', emoji: '📚' },

@@ -36,6 +36,7 @@ function GoogleMark() {
 }
 
 export function Login() {
+  const [mode, setMode] = useState('register')
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
@@ -43,15 +44,18 @@ export function Login() {
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)
+  const isRegister = mode === 'register'
 
   const validateAll = () => {
-    const e1 = nameFieldError(firstName) || nameFieldError(lastName)
-    if (e1) return e1
+    if (isRegister) {
+      const e1 = nameFieldError(firstName) || nameFieldError(lastName)
+      if (e1) return e1
+    }
     const e2 = emailFieldError(email)
     if (e2) return e2
     const e3 = passwordFieldError(password)
     if (e3) return e3
-    if (password !== passwordConfirm) return 'Las contraseñas no coinciden.'
+    if (isRegister && password !== passwordConfirm) return 'Las contraseñas no coinciden.'
     return null
   }
 
@@ -63,7 +67,7 @@ export function Login() {
     if (err) setError(err)
   }
 
-  const onRegister = async (ev) => {
+  const onSubmit = async (ev) => {
     ev.preventDefault()
     const v = validateAll()
     if (v) {
@@ -72,24 +76,21 @@ export function Login() {
     }
     setError(null)
     setBusy(true)
-    const { error: err } = await register(email.trim(), password)
+    const { error: err } = isRegister
+      ? await register(email.trim(), password, {
+          firstName,
+          lastName,
+        })
+      : await login(email.trim(), password)
     setBusy(false)
     if (err) setError(err)
   }
 
-  const onLoginOnly = async (ev) => {
-    ev.preventDefault()
-    const e2 = emailFieldError(email)
-    const e3 = passwordFieldError(password)
-    if (e2 || e3) {
-      setError(e2 || e3)
-      return
-    }
+  const onToggleMode = () => {
+    setMode((prev) => (prev === 'register' ? 'login' : 'register'))
     setError(null)
-    setBusy(true)
-    const { error: err } = await login(email.trim(), password)
-    setBusy(false)
-    if (err) setError(err)
+    setPassword('')
+    setPasswordConfirm('')
   }
 
   return (
@@ -100,11 +101,12 @@ export function Login() {
       aria-labelledby="login-title"
     >
       <h2 id="login-title" className="moni-login-card__title">
-        Empezá tu plan con MONI
+        {isRegister ? 'Empezá tu plan con MONI' : 'Volvé a tu plan en MONI'}
       </h2>
       <p className="moni-login-card__hint">
-        Entrá para ordenar tu situación actual, definir una meta concreta y ver si el futuro que
-        querés es financieramente posible.
+        {isRegister
+          ? 'Entrá para ordenar tu situación actual, definir una meta concreta y ver si el futuro que querés es financieramente posible.'
+          : 'Ingresá con tu cuenta para continuar tu planificación y proyección financiera.'}
       </p>
 
       <button
@@ -121,60 +123,66 @@ export function Login() {
         <span>o con email</span>
       </div>
 
-      <form className="moni-form" onSubmit={onRegister} noValidate>
-        <div className="moni-form-row moni-form-row--split">
-          <label className="moni-field">
-            <span className="moni-field__label">Nombre</span>
-            <input
-              className="moni-input"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              autoComplete="given-name"
-            />
-          </label>
-          <label className="moni-field">
-            <span className="moni-field__label">Apellido</span>
-            <input
-              className="moni-input"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              autoComplete="family-name"
-            />
-          </label>
-        </div>
-        <div className="moni-form-row moni-form-row--single">
-          <label className="moni-field">
-            <span className="moni-field__label">Email</span>
-            <input
-              className="moni-input"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-            />
-          </label>
-        </div>
-        <div className="moni-form-row moni-form-row--split">
-          <label className="moni-field">
-            <span className="moni-field__label">Contraseña</span>
-            <input
-              className="moni-input"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="new-password"
-            />
-          </label>
-          <label className="moni-field">
-            <span className="moni-field__label">Confirmar</span>
-            <input
-              className="moni-input"
-              type="password"
-              value={passwordConfirm}
-              onChange={(e) => setPasswordConfirm(e.target.value)}
-              autoComplete="new-password"
-            />
-          </label>
+      <form className={`moni-form moni-form--${mode}`} onSubmit={onSubmit} noValidate>
+        <div key={mode} className="moni-login-form-shell">
+          {isRegister ? (
+            <div className="moni-form-row moni-form-row--split">
+              <label className="moni-field">
+                <span className="moni-field__label">Nombre</span>
+                <input
+                  className="moni-input"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  autoComplete="given-name"
+                />
+              </label>
+              <label className="moni-field">
+                <span className="moni-field__label">Apellido</span>
+                <input
+                  className="moni-input"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  autoComplete="family-name"
+                />
+              </label>
+            </div>
+          ) : null}
+          <div className="moni-form-row moni-form-row--single">
+            <label className="moni-field">
+              <span className="moni-field__label">Email</span>
+              <input
+                className="moni-input"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+              />
+            </label>
+          </div>
+          <div className={`moni-form-row ${isRegister ? 'moni-form-row--split' : 'moni-form-row--single'}`}>
+            <label className="moni-field">
+              <span className="moni-field__label">Contraseña</span>
+              <input
+                className="moni-input"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete={isRegister ? 'new-password' : 'current-password'}
+              />
+            </label>
+            {isRegister ? (
+              <label className="moni-field">
+                <span className="moni-field__label">Confirmar</span>
+                <input
+                  className="moni-input"
+                  type="password"
+                  value={passwordConfirm}
+                  onChange={(e) => setPasswordConfirm(e.target.value)}
+                  autoComplete="new-password"
+                />
+              </label>
+            ) : null}
+          </div>
         </div>
 
         {error ? (
@@ -189,15 +197,18 @@ export function Login() {
             className="moni-btn moni-btn--primary moni-btn--block moni-login-card__cta"
             disabled={busy}
           >
-            Crear cuenta
+            {isRegister ? 'Crear cuenta' : 'Iniciar sesión'}
           </button>
           <button
             type="button"
             className="moni-login-foot-link"
-            onClick={onLoginOnly}
+            onClick={onToggleMode}
             disabled={busy}
           >
-            ¿Ya tenés cuenta? <span className="moni-login-foot-link__em">Iniciar sesión</span>
+            {isRegister ? '¿Ya tenés cuenta? ' : '¿No tenés cuenta? '}
+            <span className="moni-login-foot-link__em">
+              {isRegister ? 'Iniciar sesión' : 'Crear cuenta'}
+            </span>
           </button>
         </div>
       </form>

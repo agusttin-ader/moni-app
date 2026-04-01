@@ -29,6 +29,10 @@ export function UnifiedExpenseSheet({
   const [amount, setAmount] = useState('')
   const [categoryId, setCategoryId] = useState('food')
   const [date, setDate] = useState(todayISODate)
+  const [fixedFrequency, setFixedFrequency] = useState('mensual')
+  const [fixedStartMonth, setFixedStartMonth] = useState(() =>
+    todayISODate().slice(0, 7),
+  )
   const [error, setError] = useState(null)
   const [editingFixedId, setEditingFixedId] = useState(null)
   const [editingDailyId, setEditingDailyId] = useState(null)
@@ -47,6 +51,8 @@ export function UnifiedExpenseSheet({
           setConcept(String(x.name ?? ''))
           setAmount(String(x.amount ?? ''))
           setCategoryId(String(x.categoryId ?? 'other'))
+          setFixedFrequency(String(x.frequency ?? 'mensual'))
+          setFixedStartMonth(String(x.startMonth ?? todayISODate().slice(0, 7)))
           setDate(todayISODate())
           setEditingFixedId(x.id)
           setEditingDailyId(null)
@@ -78,6 +84,8 @@ export function UnifiedExpenseSheet({
       setAmount('')
       setCategoryId('food')
       setDate(todayISODate())
+      setFixedFrequency('mensual')
+      setFixedStartMonth(todayISODate().slice(0, 7))
     })
   }, [open, sheetKey, sheetOpts, gastos, gastosDiarios])
 
@@ -109,6 +117,8 @@ export function UnifiedExpenseSheet({
         name: note,
         amount: amt,
         categoryId,
+        frequency: fixedFrequency,
+        startMonth: fixedStartMonth,
       }
       if (editingFixedId) {
         dispatch({
@@ -212,7 +222,7 @@ export function UnifiedExpenseSheet({
             </div>
           ) : (
             <p className="moni-unified-sheet__mode-hint">
-              {mode === 'fixed' ? 'Gasto fijo mensual' : 'Gasto variable por día'}
+              {mode === 'fixed' ? 'Gasto fijo recurrente' : 'Gasto variable por día'}
             </p>
           )}
 
@@ -226,7 +236,33 @@ export function UnifiedExpenseSheet({
                 onChange={(e) => setDate(e.target.value)}
               />
             </label>
-          ) : null}
+          ) : (
+            <div className="moni-unified-sheet__row moni-unified-sheet__row--two">
+              <label className="moni-field">
+                <span className="moni-field__label">Frecuencia</span>
+                <select
+                  className="moni-input"
+                  value={fixedFrequency}
+                  onChange={(e) => setFixedFrequency(e.target.value)}
+                >
+                  <option value="mensual">Mensual</option>
+                  <option value="bimestral">Bimestral</option>
+                  <option value="trimestral">Trimestral</option>
+                  <option value="semestral">Semestral</option>
+                  <option value="anual">Anual</option>
+                </select>
+              </label>
+              <label className="moni-field">
+                <span className="moni-field__label">Primer mes</span>
+                <input
+                  className="moni-input"
+                  type="month"
+                  value={fixedStartMonth}
+                  onChange={(e) => setFixedStartMonth(e.target.value)}
+                />
+              </label>
+            </div>
+          )}
 
           <div className="moni-field">
             <span className="moni-field__label">Categoría</span>
@@ -238,10 +274,14 @@ export function UnifiedExpenseSheet({
                     key={c.id}
                     type="button"
                     role="listitem"
+                    data-active={active ? 'true' : 'false'}
                     className={`moni-category-chip${active ? ' moni-category-chip--active' : ''}`}
                     onClick={() => setCategoryId(c.id)}
                     aria-pressed={active}
                   >
+                    <span className="moni-category-chip__check" aria-hidden>
+                      {active ? '✓' : ''}
+                    </span>
                     <span className="moni-category-chip__emoji" aria-hidden>
                       {c.emoji}
                     </span>

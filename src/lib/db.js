@@ -43,6 +43,14 @@ function normalizeUserPayload(raw) {
           g && typeof g === 'object' && g.categoryId != null
             ? String(g.categoryId)
             : 'other',
+        frequency:
+          g && typeof g === 'object' && g.frequency != null
+            ? String(g.frequency)
+            : 'mensual',
+        startMonth:
+          g && typeof g === 'object' && g.startMonth != null
+            ? normalizeStartMonth(g.startMonth)
+            : normalizeStartMonth(),
       }))
     : []
   const deudas = Array.isArray(raw.deudas)

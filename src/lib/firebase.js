@@ -1,6 +1,6 @@
 import { getApps, initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
-import { getFirestore } from 'firebase/firestore'
+import { getFirestore, initializeFirestore } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
 
 const firebaseConfig = {
@@ -35,6 +35,18 @@ let db = null
 let storage = null
 let firebaseInitError = null
 
+function initFirestoreWithNetworkFallback(app) {
+  try {
+    // Mitiga errores intermitentes de transporte (QUIC/proxy/adblock) en algunos entornos.
+    return initializeFirestore(app, {
+      experimentalAutoDetectLongPolling: true,
+      useFetchStreams: false,
+    })
+  } catch {
+    return getFirestore(app)
+  }
+}
+
 if (!firebaseEnvComplete()) {
   firebaseInitError =
     'Faltan datos de Firebase. Creá un archivo .env en la raíz del proyecto (copiá .env.example) y completá todas las variables VITE_FIREBASE_*. Después reiniciá npm run dev.'
@@ -48,7 +60,7 @@ if (!firebaseEnvComplete()) {
     const app =
       getApps().length === 0 ? initializeApp(appConfig) : getApps()[0]
     auth = getAuth(app)
-    db = getFirestore(app)
+    db = initFirestoreWithNetworkFallback(app)
     storage = getStorage(app)
   } catch (e) {
     console.error(e)

@@ -1,24 +1,35 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
-  color-scheme: dark;
-  --eth-bg-deep: #0d0820;
-  --eth-bg-mid: #171130;
-  --eth-surface: rgba(255, 255, 255, 0.055);
-  --eth-border: rgba(182, 173, 255, 0.18);
-  --eth-text: rgba(248, 249, 255, 0.97);
-  --eth-muted: rgba(205, 206, 232, 0.7);
-  --eth-teal: #83e6db;
-  --eth-teal-dim: rgba(131, 230, 219, 0.18);
-  --eth-violet: #8f79ff;
-  --eth-violet-dim: rgba(143, 121, 255, 0.18);
-  --eth-danger: #fb7185;
-  --eth-success: #34d399;
-  --eth-warning: #f59e0b;
-  --eth-radius-lg: 28px;
-  --eth-radius-md: 20px;
-  --eth-radius-sm: 14px;
-  --eth-shadow: 0 28px 80px rgba(2, 8, 23, 0.42);
+  color-scheme: light;
+  /* FINEbank-style palette: página clara, acento teal, drawer oscuro */
+  --moni-page-bg: #f8f9fb;
+  --moni-accent: #31a096;
+  --moni-accent-dim: rgba(49, 160, 150, 0.14);
+  --moni-drawer-bg: #1a1a1a;
+  --moni-drawer-text: rgba(255, 255, 255, 0.95);
+  --moni-drawer-muted: rgba(255, 255, 255, 0.62);
+  --moni-divider: rgba(15, 23, 42, 0.08);
+  --moni-border-subtle: rgba(15, 23, 42, 0.1);
+
+  /* Compat: nombres históricos usados en App.css */
+  --eth-bg-deep: #f8f9fb;
+  --eth-bg-mid: #f8f9fb;
+  --eth-surface: transparent;
+  --eth-border: var(--moni-border-subtle);
+  --eth-text: #1a1a1a;
+  --eth-muted: #64748b;
+  --eth-teal: #31a096;
+  --eth-teal-dim: rgba(49, 160, 150, 0.16);
+  --eth-violet: #0f766e;
+  --eth-violet-dim: rgba(15, 118, 110, 0.12);
+  --eth-danger: #dc2626;
+  --eth-success: #15803d;
+  --eth-warning: #ca8a04;
+  --eth-radius-lg: 16px;
+  --eth-radius-md: 12px;
+  --eth-radius-sm: 10px;
+  --eth-shadow: none;
   --eth-font: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --moni-ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
   --moni-ease-out-soft: cubic-bezier(0.33, 1, 0.68, 1);
@@ -27,14 +38,11 @@
   --moni-motion-fast: 0.2s;
   --moni-motion-medium: 0.45s;
   --moni-motion-slow: 0.75s;
-  /* Ritmo vertical en pantallas estrechas (sobrescrito en App.css si hace falta) */
   --moni-space-section: clamp(0.88rem, 3vw, 1.12rem);
   --moni-space-panel-y: clamp(1rem, 3.5vw, 1.2rem);
-  /* Formularios: label ↔ control y stack */
   --moni-space-field: 0.48rem;
   --moni-space-form-stack: 0.92rem;
   --moni-space-form-actions: 0.72rem;
-  /* Jerarquía tipográfica (UI densa pero legible) */
   --moni-type-label: 0.72rem;
   --moni-type-body: 0.9rem;
   --moni-type-panel-title: 1rem;
@@ -53,7 +61,7 @@
 }
 
 html {
-  background: var(--eth-bg-deep);
+  background: var(--moni-page-bg);
   overflow-x: hidden;
   scroll-behavior: smooth;
 }
@@ -69,10 +77,7 @@ body {
   line-height: 1.5;
   font-family: var(--eth-font);
   color: var(--eth-text);
-  background:
-    radial-gradient(1200px 800px at 12% -8%, rgba(131, 230, 219, 0.14), transparent),
-    radial-gradient(1000px 700px at 88% 0%, rgba(143, 121, 255, 0.24), transparent),
-    linear-gradient(180deg, var(--eth-bg-mid), var(--eth-bg-deep));
+  background: var(--moni-page-bg);
   -webkit-font-smoothing: antialiased;
 }
 

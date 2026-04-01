@@ -1,5 +1,6 @@
 import { budgetOverviewModel } from '../lib/calculations.js'
 import { formatMoney } from '../lib/format.js'
+import { useAnimatedNumber } from '../hooks/useAnimatedNumber.js'
 
 function clamp01(value) {
   return Math.max(0, Math.min(1, value))
@@ -7,6 +8,11 @@ function clamp01(value) {
 
 export function BudgetHealthCard({ state }) {
   const overview = budgetOverviewModel(state)
+  const usagePctA = useAnimatedNumber(Math.round((overview.usageRatio || 0) * 100))
+  const remainingA = useAnimatedNumber(overview.remaining)
+  const totalLimitA = useAnimatedNumber(overview.totalLimit)
+  const totalSpentA = useAnimatedNumber(overview.totalSpent)
+  const safeToSpendA = useAnimatedNumber(overview.safeToSpend)
 
   if (!overview.hasBudget) {
     return (
@@ -43,23 +49,23 @@ export function BudgetHealthCard({ state }) {
           </p>
         </div>
         <span className={`moni-budget-pill moni-budget-pill--${tone}`}>
-          {Math.round(overview.usageRatio * 100)}%
+          {Math.max(0, usagePctA)}%
         </span>
       </div>
 
       <div className="moni-budget-card__hero">
         <div>
           <div className="moni-budget-card__label">Disponible</div>
-          <div className="moni-budget-card__value">{formatMoney(overview.remaining)}</div>
+          <div className="moni-budget-card__value">{formatMoney(remainingA)}</div>
         </div>
         <div className="moni-budget-card__side">
           <div>
             <span className="moni-budget-card__metric-label">Tope</span>
-            <strong>{formatMoney(overview.totalLimit)}</strong>
+            <strong>{formatMoney(totalLimitA)}</strong>
           </div>
           <div>
             <span className="moni-budget-card__metric-label">Gastado</span>
-            <strong>{formatMoney(overview.totalSpent)}</strong>
+            <strong>{formatMoney(totalSpentA)}</strong>
           </div>
         </div>
       </div>
@@ -80,7 +86,7 @@ export function BudgetHealthCard({ state }) {
 
       <div className="moni-budget-card__meta">
         <p className="moni-budget-card__hint">
-          Ritmo sugerido: <strong>{formatMoney(overview.safeToSpend)}</strong> por día durante los
+          Ritmo sugerido: <strong>{formatMoney(safeToSpendA)}</strong> por día durante los
           próximos <strong>{overview.daysLeft}</strong> días.
         </p>
         {overview.alertRow ? (

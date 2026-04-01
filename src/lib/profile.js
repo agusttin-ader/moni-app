@@ -15,7 +15,30 @@ function normalizeString(value) {
   return typeof value === 'string' ? value.trim() : ''
 }
 
+function splitDisplayName(displayName) {
+  const clean = normalizeString(displayName)
+  if (!clean) return { firstName: '', lastName: '' }
+  const parts = clean.split(/\s+/).filter(Boolean)
+  if (parts.length === 1) return { firstName: parts[0], lastName: '' }
+  return {
+    firstName: parts[0],
+    lastName: parts.slice(1).join(' '),
+  }
+}
+
 function normalizeProfilePayload(raw) {
+  const allowNameUpdate = Boolean(raw?.allowNameUpdate)
+  const payload = {
+    avatarUrl: normalizeString(raw?.avatarUrl),
+  }
+  if (allowNameUpdate) {
+    payload.firstName = normalizeString(raw?.firstName)
+    payload.lastName = normalizeString(raw?.lastName)
+  }
+  return payload
+}
+
+function normalizeRemoteProfile(raw) {
   return {
     firstName: normalizeString(raw.firstName),
     lastName: normalizeString(raw.lastName),
@@ -24,9 +47,10 @@ function normalizeProfilePayload(raw) {
 }
 
 export function buildEmptyProfile(user) {
+  const names = splitDisplayName(user?.displayName)
   return {
-    firstName: '',
-    lastName: '',
+    firstName: names.firstName,
+    lastName: names.lastName,
     avatarUrl: normalizeString(user?.photoURL),
   }
 }
@@ -44,7 +68,7 @@ export async function getUserProfile(uid) {
 
   const snap = await getDoc(profileDocRef(uid))
   if (!snap.exists()) return null
-  return normalizeProfilePayload(snap.data())
+  return normalizeRemoteProfile(snap.data())
 }
 
 /**
@@ -52,7 +76,7 @@ export async function getUserProfile(uid) {
  * @param {string} uid
  * @param {Record<string, string>} data
  */
-export async function saveUserProfile(uid, data) {
+export async function saveUserProfile(uid, data, options = {}) {
   requireDb()
   if (!uid || typeof uid !== 'string') {
     throw new Error('saveUserProfile: uid inválido.')
@@ -62,7 +86,10 @@ export async function saveUserProfile(uid, data) {
   }
 
   const payload = {
-    ...normalizeProfilePayload(data),
+    ...normalizeProfilePayload({
+      ...data,
+      allowNameUpdate: Boolean(options?.allowNameUpdate),
+    }),
     updatedAt: serverTimestamp(),
   }
 

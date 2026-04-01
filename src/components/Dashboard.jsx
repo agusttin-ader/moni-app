@@ -13,6 +13,8 @@ import { GoalPlannerPanel } from './GoalPlannerPanel.jsx'
 import { Header } from './Header.jsx'
 import { IncomesPanel } from './IncomesPanel.jsx'
 import { MiniMetrics } from './MiniMetrics.jsx'
+import { PayPriorityCard } from './PayPriorityCard.jsx'
+import { SpendingMixCard } from './SpendingMixCard.jsx'
 import { useUserProfile } from '../hooks/useUserProfile.js'
 import { useProjectionHistory } from '../hooks/useProjectionHistory.js'
 
@@ -60,10 +62,7 @@ export function Dashboard({ state, dispatch, user, onLogout }) {
   const {
     profile,
     loading: profileLoading,
-    saving: profileSaving,
     uploading: profileUploading,
-    error: profileError,
-    saveProfile,
     updateAvatar,
   } = useUserProfile(user)
   const {
@@ -87,16 +86,69 @@ export function Dashboard({ state, dispatch, user, onLogout }) {
     <div
       className={`moni-app${installedAppEnter ? ' moni-app--enter' : ''}`.trim()}
     >
-      <Header
-        user={user}
-        profile={profile}
-        onLogout={onLogout}
-        onOpenProfile={onOpenProfile}
-        onOpenHistory={onOpenHistory}
-        activeView={activeView}
-        onChangeView={setActiveView}
-        onQuickAdd={openUnified}
-      />
+      <div className="moni-shell">
+        <aside className="moni-side-nav" aria-label="Navegación principal">
+          <div className="moni-side-nav__brand">
+            <img
+              className="moni-side-nav__logo"
+              src="/images/moni-logo.png"
+              alt="Moni"
+              decoding="async"
+            />
+            <p className="moni-side-nav__subtitle">Plan financiero personal</p>
+          </div>
+          <nav className="moni-side-nav__nav" aria-label="Vistas">
+            <button
+              type="button"
+              className={`moni-side-nav__item${activeView === 'home' ? ' is-active' : ''}`}
+              onClick={() => setActiveView('home')}
+            >
+              Overview
+            </button>
+            <button
+              type="button"
+              className={`moni-side-nav__item${activeView === 'planning' ? ' is-active' : ''}`}
+              onClick={() => setActiveView('planning')}
+            >
+              Planificación
+            </button>
+          </nav>
+          <div className="moni-side-nav__footer">
+            <button
+              type="button"
+              className="moni-side-nav__ghost"
+              onClick={onOpenProfile}
+            >
+              Perfil
+            </button>
+            <button
+              type="button"
+              className="moni-side-nav__ghost"
+              onClick={onOpenHistory}
+            >
+              Historial
+            </button>
+            <button
+              type="button"
+              className="moni-side-nav__ghost moni-side-nav__ghost--danger"
+              onClick={onLogout}
+            >
+              Cerrar sesión
+            </button>
+          </div>
+        </aside>
+
+        <div className="moni-shell__content">
+          <Header
+            user={user}
+            profile={profile}
+            onLogout={onLogout}
+            onOpenProfile={onOpenProfile}
+            onOpenHistory={onOpenHistory}
+            activeView={activeView}
+            onChangeView={setActiveView}
+            onQuickAdd={openUnified}
+          />
       {profileOpen ? (
         <Suspense fallback={null}>
           <ProfilePanel
@@ -105,10 +157,7 @@ export function Dashboard({ state, dispatch, user, onLogout }) {
             user={user}
             profile={profile}
             loading={profileLoading}
-            saving={profileSaving}
             uploading={profileUploading}
-            error={profileError}
-            onSave={saveProfile}
             onUploadAvatar={updateAvatar}
           />
         </Suspense>
@@ -124,7 +173,7 @@ export function Dashboard({ state, dispatch, user, onLogout }) {
           />
         </Suspense>
       ) : null}
-      <main className="moni-main">
+          <main className="moni-main">
         {activeView === 'home' ? (
           <div className="moni-layout moni-layout--home">
             <div className="moni-layout__main">
@@ -132,10 +181,11 @@ export function Dashboard({ state, dispatch, user, onLogout }) {
                 <section className="moni-dashboard-overview">
                   <div className="moni-dashboard-overview__hero">
                     <CurrentMonthHero state={state} remaining={remaining} />
-                    <GoalActiveCard state={state} />
+                    <PayPriorityCard state={state} />
+                    <SpendingMixCard state={state} />
                   </div>
                   <div className="moni-dashboard-overview__side">
-                    <GoalAdviceCard state={state} />
+                    <GoalActiveCard state={state} />
                     <MiniMetrics state={state} />
                     <BudgetHealthCard state={state} />
                   </div>
@@ -143,6 +193,9 @@ export function Dashboard({ state, dispatch, user, onLogout }) {
               </div>
               <div className="moni-anim-in moni-layout__main-block moni-layout__main-block--insights">
                 <section className="moni-dashboard-insights">
+                  <div className="moni-dashboard-insights__full">
+                    <GoalAdviceCard state={state} />
+                  </div>
                   <Suspense
                     fallback={
                       <div
@@ -270,8 +323,10 @@ export function Dashboard({ state, dispatch, user, onLogout }) {
           sheetKey={unifiedKey}
           sheetOpts={unifiedOpts}
         />
-      </main>
-      <AppFooter variant="app" />
+          </main>
+          <AppFooter variant="app" />
+        </div>
+      </div>
     </div>
   )
 }

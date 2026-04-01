@@ -4,8 +4,10 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
+  updateProfile,
 } from 'firebase/auth'
 import { auth, firebaseInitError } from './firebase.js'
+import { saveUserProfile } from './profile.js'
 
 function authUnavailableMessage() {
   return (
@@ -14,7 +16,11 @@ function authUnavailableMessage() {
   )
 }
 
-export async function register(email, password) {
+function normalizeName(value) {
+  return typeof value === 'string' ? value.trim() : ''
+}
+
+export async function register(email, password, profileData = {}) {
   if (!auth) return { user: null, error: authUnavailableMessage() }
   try {
     const credential = await createUserWithEmailAndPassword(
@@ -22,6 +28,23 @@ export async function register(email, password) {
       email,
       password,
     )
+    const firstName = normalizeName(profileData.firstName)
+    const lastName = normalizeName(profileData.lastName)
+    const displayName = [firstName, lastName].filter(Boolean).join(' ').trim()
+    if (displayName) {
+      await updateProfile(credential.user, { displayName })
+    }
+    if (firstName || lastName) {
+      try {
+        await saveUserProfile(
+          credential.user.uid,
+          { firstName, lastName },
+          { allowNameUpdate: true },
+        )
+      } catch {
+        // Non-blocking: auth account is already created.
+      }
+    }
     return { user: credential.user, error: null }
   } catch (error) {
     return { user: null, error: error?.message ?? 'Error al registrarse' }

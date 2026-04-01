@@ -97,17 +97,32 @@ export function moniReducer(state, action) {
       }
 
     case 'expense/add': {
-      const { name, amount, categoryId = 'other' } = action.payload
+      const {
+        name,
+        amount,
+        categoryId = 'other',
+        frequency = 'mensual',
+        startMonth,
+      } = action.payload
       const item = {
         id: genId(),
         name: String(name),
         amount: Number(amount) || 0,
         categoryId: String(categoryId ?? 'other'),
+        frequency: String(frequency ?? 'mensual'),
+        startMonth: normalizeStartMonth(startMonth),
       }
       return { ...state, gastos: [...state.gastos, item] }
     }
     case 'expense/update': {
-      const { id, name, amount, categoryId = 'other' } = action.payload
+      const {
+        id,
+        name,
+        amount,
+        categoryId = 'other',
+        frequency = 'mensual',
+        startMonth,
+      } = action.payload
       return {
         ...state,
         gastos: state.gastos.map((x) =>
@@ -117,6 +132,8 @@ export function moniReducer(state, action) {
                 name: String(name),
                 amount: Number(amount) || 0,
                 categoryId: String(categoryId ?? 'other'),
+                frequency: String(frequency ?? 'mensual'),
+                startMonth: normalizeStartMonth(startMonth || x.startMonth),
               }
             : x,
         ),

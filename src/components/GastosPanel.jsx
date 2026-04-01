@@ -1,5 +1,9 @@
 import { useMemo, useState } from 'react'
-import { currentYearMonthString } from '../lib/calculations.js'
+import {
+  currentYearMonthString,
+  totalFixedExpensesForMonth,
+  yearMonthToIndex,
+} from '../lib/calculations.js'
 import { expenseCategoryById } from '../lib/expenseCategories.js'
 import { formatMoney } from '../lib/format.js'
 import { CollapsiblePanelDetail } from './CollapsiblePanelDetail.jsx'
@@ -7,7 +11,45 @@ import { GastosFilterSelect } from './GastosFilterSelect.jsx'
 
 /** @typedef {'all' | 'fixed' | 'variable'} GastosFilter */
 
-export function GastosPanel({ gastos, gastosDiarios, dispatch, onOpenUnified }) {
+function gastosRowMatchesQuery(row, q) {
+  const needle = q.trim().toLowerCase()
+  if (!needle) return true
+  if (row.kind === 'fixed') {
+    const x = row.data
+    const cat = expenseCategoryById(x.categoryId ?? 'other')
+    return [x.name, cat.label, cat.short].some((t) =>
+      String(t ?? '')
+        .toLowerCase()
+        .includes(needle),
+    )
+  }
+  const x = row.data
+  const cat = expenseCategoryById(x.categoryId)
+  const note = x.note?.trim() ?? ''
+  const label = note || cat.short
+  return [label, cat.label, cat.short, x.date].some((t) =>
+    String(t ?? '')
+      .toLowerCase()
+      .includes(needle),
+  )
+}
+
+function fixedFrequencyLabel(value) {
+  const freq = String(value ?? 'mensual').toLowerCase()
+  if (freq === 'bimestral') return 'cada 2 meses'
+  if (freq === 'trimestral') return 'cada 3 meses'
+  if (freq === 'semestral') return 'cada 6 meses'
+  if (freq === 'anual') return 'cada 12 meses'
+  return 'mensual'
+}
+
+export function GastosPanel({
+  gastos,
+  gastosDiarios,
+  dispatch,
+  onOpenUnified,
+  listFilterQuery = '',
+}) {
   const [filter, setFilter] = useState(
     /** @type {GastosFilter} */ ('all'),
   )
@@ -25,17 +67,24 @@ export function GastosPanel({ gastos, gastosDiarios, dispatch, onOpenUnified }) 
     })
   }, [gastosDiarios, monthKey])
 
-  const fixedTotal = useMemo(
-    () =>
-      (gastos ?? []).reduce((s, g) => s + (Number(g.amount) || 0), 0),
-    [gastos],
-  )
+  const fixedTotal = useMemo(() => {
+    const idx = yearMonthToIndex(monthKey)
+    return totalFixedExpensesForMonth(gastos, idx)
+  }, [gastos, monthKey])
 
   const variableTotal = useMemo(
     () =>
       variableMonth.reduce((s, g) => s + (Number(g.amount) || 0), 0),
     [variableMonth],
   )
+
+  const unfilteredCount = useMemo(() => {
+    const fixed = (gastos ?? []).length
+    const variable = variableMonth.length
+    if (filter === 'fixed') return fixed
+    if (filter === 'variable') return variable
+    return fixed + variable
+  }, [gastos, variableMonth, filter])
 
   const rows = useMemo(() => {
     const fixed = (gastos ?? []).map((x) => ({
@@ -51,10 +100,18 @@ export function GastosPanel({ gastos, gastosDiarios, dispatch, onOpenUnified }) 
       data: x,
     }))
     const merged = [...fixed, ...variable]
-    if (filter === 'fixed') return merged.filter((r) => r.kind === 'fixed')
-    if (filter === 'variable') return merged.filter((r) => r.kind === 'variable')
-    return merged
-  }, [gastos, variableMonth, filter])
+    let out =
+      filter === 'fixed'
+        ? merged.filter((r) => r.kind === 'fixed')
+        : filter === 'variable'
+          ? merged.filter((r) => r.kind === 'variable')
+          : merged
+    const q = listFilterQuery ?? ''
+    if (q.trim()) {
+      out = out.filter((r) => gastosRowMatchesQuery(r, q))
+    }
+    return out
+  }, [gastos, variableMonth, filter, listFilterQuery])
 
   const listCount = rows.length
   const emptyMsg =
@@ -91,7 +148,7 @@ export function GastosPanel({ gastos, gastosDiarios, dispatch, onOpenUnified }) 
 
       <p className="moni-gastos-totals" aria-live="polite">
         <span>
-          Fijos: <strong>{formatMoney(fixedTotal)}</strong>/mes
+          Fijos ({monthKey}): <strong>{formatMoney(fixedTotal)}</strong>
         </span>
         <span className="moni-gastos-totals__sep" aria-hidden>
           ·
@@ -101,13 +158,16 @@ export function GastosPanel({ gastos, gastosDiarios, dispatch, onOpenUnified }) 
         </span>
       </p>
 
-      {!listCount ? (
+      {!unfilteredCount ? (
         <p className="moni-empty">{emptyMsg}</p>
       ) : (
         <CollapsiblePanelDetail
-          labelCollapsed={`Ver movimientos (${listCount})`}
+          labelCollapsed={`Ver movimientos (${unfilteredCount})`}
           labelOpen="Ocultar lista"
         >
+          {!listCount ? (
+            <p className="moni-empty">Ningún movimiento coincide con la búsqueda.</p>
+          ) : (
           <ul className="moni-list moni-list--embedded moni-gastos-list">
             {rows.map((row) => {
               if (row.kind === 'fixed') {
@@ -122,7 +182,9 @@ export function GastosPanel({ gastos, gastosDiarios, dispatch, onOpenUnified }) 
                         </span>
                         <span aria-hidden>{cat.emoji}</span> {x.name}
                       </div>
-                      <div className="moni-list__meta">{formatMoney(x.amount)} / mes</div>
+                      <div className="moni-list__meta">
+                        {formatMoney(x.amount)} · {fixedFrequencyLabel(x.frequency)}
+                      </div>
                     </div>
                     <div className="moni-list__actions">
                       <button
@@ -240,6 +302,7 @@ export function GastosPanel({ gastos, gastosDiarios, dispatch, onOpenUnified }) 
               )
             })}
           </ul>
+          )}
         </CollapsiblePanelDetail>
       )}
     </section>

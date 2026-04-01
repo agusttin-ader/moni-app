@@ -1,11 +1,21 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNarrowViewport } from '../hooks/useNarrowViewport.js'
 import { CollapsiblePanelDetail } from './CollapsiblePanelDetail.jsx'
 import { amountFieldError, nameFieldError } from '../lib/formValidation.js'
 import { formatMoney, formatYearMonth } from '../lib/format.js'
 
-export function IncomesPanel({ items, dispatch, expandFormSignal = 0 }) {
+export function IncomesPanel({ items, dispatch, expandFormSignal = 0, listFilterQuery = '' }) {
   const narrow = useNarrowViewport()
+  const filteredItems = useMemo(() => {
+    const q = (listFilterQuery ?? '').trim().toLowerCase()
+    if (!q) return items
+    return items.filter((x) =>
+      String(x.name ?? '')
+        .toLowerCase()
+        .includes(q),
+    )
+  }, [items, listFilterQuery])
+
   const [addFormOpen, setAddFormOpen] = useState(false)
   const [name, setName] = useState('')
   const [amount, setAmount] = useState('')
@@ -158,8 +168,11 @@ export function IncomesPanel({ items, dispatch, expandFormSignal = 0 }) {
           labelCollapsed={`Ver ingresos cargados (${items.length})`}
           labelOpen="Ocultar ingresos"
         >
+          {!filteredItems.length ? (
+            <p className="moni-empty">Ningún ingreso coincide con la búsqueda.</p>
+          ) : (
           <ul className="moni-list moni-list--embedded">
-            {items.map((x) => (
+            {filteredItems.map((x) => (
               <li key={x.id} className="moni-list__item">
                 <div>
                   <div className="moni-list__name">{x.name}</div>
@@ -218,6 +231,7 @@ export function IncomesPanel({ items, dispatch, expandFormSignal = 0 }) {
               </li>
             ))}
           </ul>
+          )}
         </CollapsiblePanelDetail>
       )}
     </section>

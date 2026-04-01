@@ -18,7 +18,7 @@ import {
 } from '../lib/formValidation.js'
 import { formatMoney, formatYearMonth } from '../lib/format.js'
 
-export function DebtsPanel({ items, dispatch, expandFormSignal = 0 }) {
+export function DebtsPanel({ items, dispatch, expandFormSignal = 0, listFilterQuery = '' }) {
   const narrow = useNarrowViewport()
   const [addFormOpen, setAddFormOpen] = useState(false)
   const [name, setName] = useState('')
@@ -39,6 +39,16 @@ export function DebtsPanel({ items, dispatch, expandFormSignal = 0 }) {
     () => debtMonthlyPreviewFromFormFields(totalAmount, installmentCount),
     [totalAmount, installmentCount],
   )
+
+  const filteredDebtItems = useMemo(() => {
+    const q = (listFilterQuery ?? '').trim().toLowerCase()
+    if (!q) return items
+    return items.filter((x) =>
+      String(x.name ?? '')
+        .toLowerCase()
+        .includes(q),
+    )
+  }, [items, listFilterQuery])
 
   const reset = () => {
     setEditingId(null)
@@ -311,8 +321,11 @@ export function DebtsPanel({ items, dispatch, expandFormSignal = 0 }) {
           labelCollapsed={`Ver mis cuotas (${items.length})`}
           labelOpen="Ocultar lista"
         >
+          {!filteredDebtItems.length ? (
+            <p className="moni-empty moni-empty--debts">Ninguna cuota coincide con la búsqueda.</p>
+          ) : (
           <ul className="moni-debt-list">
-            {items.map((x) => {
+            {filteredDebtItems.map((x) => {
               const s = debtSummaryForList(x)
               const fin = debtIsFinished(x)
               const rem = remainingInstallments(x)
@@ -405,6 +418,7 @@ export function DebtsPanel({ items, dispatch, expandFormSignal = 0 }) {
               )
             })}
           </ul>
+          )}
         </CollapsiblePanelDetail>
       )}
     </section>
