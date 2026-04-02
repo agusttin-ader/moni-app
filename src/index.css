@@ -56,8 +56,9 @@
   --moni-shell-max-width: 1360px;
   --moni-shell-padding-inline: clamp(0.9rem, 4vw, 1.4rem);
   --moni-shell-padding-bottom: clamp(1.2rem, 4vw, 2rem);
-  --moni-shell-main-top: 0.8rem;
+  --moni-shell-main-top: var(--moni-space-12);
 }
+
 
 @media (max-width: 1023px) {
   :root {
@@ -119,6 +120,8 @@ textarea {
   min-height: 100vh;
   min-height: 100svh;
   min-height: 100dvh;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 a {

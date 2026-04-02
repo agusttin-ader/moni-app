@@ -1,4 +1,8 @@
-import { currentMonthBreakdown } from '../lib/calculations.js'
+import {
+  currentMonthBreakdown,
+  currentYearMonthString,
+  savingsMonthTotal,
+} from '../lib/calculations.js'
 import { formatMoney } from '../lib/format.js'
 import { useAnimatedNumber } from '../hooks/useAnimatedNumber.js'
 
@@ -9,6 +13,8 @@ export function RemainingSummary({ state }) {
   const d = useAnimatedNumber(b.debts)
   const v = useAnimatedNumber(b.daily)
   const r = useAnimatedNumber(b.remaining)
+  const sav = savingsMonthTotal(state, currentYearMonthString())
+  const s = useAnimatedNumber(sav)
 
   return (
     <section className="moni-card moni-breakdown" aria-label="Base del mes">
@@ -29,6 +35,10 @@ export function RemainingSummary({ state }) {
         <li>
           <span>Cuotas del mes</span>
           <strong>{formatMoney(d)}</strong>
+        </li>
+        <li className="moni-kv__savings">
+          <span>Ahorro registrado (mes)</span>
+          <strong>{formatMoney(s)}</strong>
         </li>
         <li className="moni-kv__total">
           <span>Restante</span>

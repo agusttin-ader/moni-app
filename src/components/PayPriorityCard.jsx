@@ -15,7 +15,7 @@ export function PayPriorityCard({ state }) {
       <div className="moni-card__head">
         <h3 className="moni-card__title">Pagá esto primero</h3>
         <p className="moni-card__sub">
-          Ranking híbrido: costo financiero, riesgo de mora, urgencia e impacto en tu flujo.
+          Orden sugerido para proteger tu flujo y reducir costo de mora.
         </p>
       </div>
 

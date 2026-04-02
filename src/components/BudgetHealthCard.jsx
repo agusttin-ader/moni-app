@@ -20,12 +20,11 @@ export function BudgetHealthCard({ state }) {
         <div className="moni-card__head moni-budget-card__head">
           <h3 className="moni-card__title">Presupuesto flexible</h3>
           <p className="moni-card__sub">
-            Definí topes por categoría para sostener mejor tu meta y evitar que el gasto variable te
-            saque del rumbo.
+            Con topes por rubro sabés cuánto podés gastar sin romper el margen ni la meta.
           </p>
         </div>
         <p className="moni-budget-card__empty">
-          Todavía no configuraste presupuestos variables.
+          Definí topes en Planificación para ver acá cuánto te queda por categoría.
         </p>
       </section>
     )
@@ -45,7 +44,7 @@ export function BudgetHealthCard({ state }) {
         <div>
           <h3 className="moni-card__title">Presupuesto flexible</h3>
           <p className="moni-card__sub">
-            Seguimiento del gasto variable para cuidar tu margen y tu plan futuro.
+            Mirá si vas encaminado: cuando te acercás al tope, conviene frenar o mover plata.
           </p>
         </div>
         <span className={`moni-budget-pill moni-budget-pill--${tone}`}>

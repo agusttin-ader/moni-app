@@ -22,6 +22,8 @@ export function createInitialState() {
     gastosDiarios: [],
     budgets: [],
     goals: [],
+    savingsMonthlyGoal: 0,
+    savingsEntries: [],
     onboardingComplete: false,
   }
 }
@@ -46,6 +48,13 @@ export function moniReducer(state, action) {
           : base.gastosDiarios,
         budgets: Array.isArray(p?.budgets) ? p.budgets : base.budgets,
         goals: Array.isArray(p?.goals) ? p.goals : base.goals,
+        savingsMonthlyGoal: Math.max(
+          0,
+          Number(p?.savingsMonthlyGoal) || 0,
+        ),
+        savingsEntries: Array.isArray(p?.savingsEntries)
+          ? p.savingsEntries
+          : base.savingsEntries,
         onboardingComplete: deriveOnboardingComplete(p),
       }
     }
@@ -315,6 +324,33 @@ export function moniReducer(state, action) {
         ...state,
         goals: state.goals.filter((goal) => goal.id !== action.payload.id),
       }
+
+    case 'savings/setMonthlyGoal': {
+      const monthlyGoal = Math.max(0, Number(action.payload?.monthlyGoal) || 0)
+      return { ...state, savingsMonthlyGoal: monthlyGoal }
+    }
+
+    case 'savings/add': {
+      const amount = Math.max(0, Number(action.payload?.amount) || 0)
+      if (amount <= 0) return state
+      let date = String(action.payload?.date ?? '').trim().slice(0, 10)
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        const d = new Date()
+        const y = d.getFullYear()
+        const m = String(d.getMonth() + 1).padStart(2, '0')
+        const day = String(d.getDate()).padStart(2, '0')
+        date = `${y}-${m}-${day}`
+      }
+      const item = {
+        id: genId(),
+        amount,
+        date,
+      }
+      return {
+        ...state,
+        savingsEntries: [...(state.savingsEntries ?? []), item],
+      }
+    }
 
     default:
       return state

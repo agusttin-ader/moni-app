@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { lockBodyScrollLight } from '../lib/bodyScrollLock.js'
+import { lockBodyScroll } from '../lib/bodyScrollLock.js'
 
 function initialsFromUser(user, profile) {
   const label =
@@ -66,7 +66,7 @@ export function Header({
 
   useEffect(() => {
     if (!menuOpen) return undefined
-    return lockBodyScrollLight()
+    return lockBodyScroll()
   }, [menuOpen])
 
   const handleLogoutClick = () => {
@@ -96,19 +96,19 @@ export function Header({
 
   const menuPortal = createPortal(
     <div
-      className={`moni-topnav__menu-layer ${menuOpen ? 'is-open' : ''}`}
+      className={`moni-topnav__menu-layer${menuOpen ? ' is-open active' : ''}`}
       aria-hidden={!menuOpen}
     >
       <button
         type="button"
-        className="moni-topnav__menu-backdrop"
+        className={`moni-topnav__menu-backdrop${menuOpen ? ' active' : ''}`}
         aria-label="Cerrar menú"
         onClick={() => setMenuOpen(false)}
         tabIndex={menuOpen ? 0 : -1}
       />
       <div
         id="moni-dashboard-menu"
-        className={`moni-topnav__drawer ${menuOpen ? 'is-open' : ''}`}
+        className={`moni-topnav__drawer${menuOpen ? ' is-open open' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label="Menú de navegación"
@@ -116,17 +116,6 @@ export function Header({
         <div className="moni-topnav__drawer-inner">
           <div className="moni-topnav__drawer-head">
             <span className="moni-topnav__drawer-head-title">Menu</span>
-            <button
-              type="button"
-              className="moni-topnav__drawer-close"
-              aria-label="Cerrar menú"
-              onClick={() => setMenuOpen(false)}
-            >
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <path d="M6 6 18 18" />
-                <path d="M18 6 6 18" />
-              </svg>
-            </button>
           </div>
           <nav className="moni-topnav__drawer-nav moni-topnav__drawer-nav--primary" aria-label="Secciones">
             <button
@@ -227,10 +216,10 @@ export function Header({
         <div className="moni-topnav__shell-row">
           <button
             type="button"
-            className={`moni-topnav__menu-btn${menuOpen ? ' is-open' : ''}`}
+            className={`moni-topnav__menu-btn${menuOpen ? ' is-open active' : ''}`}
             aria-expanded={menuOpen}
             aria-controls="moni-dashboard-menu"
-            aria-label="Abrir menú"
+            aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
             onClick={() => setMenuOpen((v) => !v)}
           >
             <span />

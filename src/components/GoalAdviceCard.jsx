@@ -60,7 +60,7 @@ export function GoalAdviceCard({ state }) {
       <div className="moni-card__head">
         <h3 className="moni-card__title">Qué priorizar ahora</h3>
         <p className="moni-card__sub">
-          Lectura híbrida de MONI: reglas financieras propias con una explicación simple y accionable.
+          Tres decisiones concretas según tu meta y tus números de este mes.
         </p>
       </div>
 
@@ -85,7 +85,7 @@ export function GoalAdviceCard({ state }) {
       ) : null}
 
       {!items.length ? (
-        <p className="moni-empty">Cargá una meta para recibir prioridades concretas.</p>
+        <p className="moni-empty">Definí una meta en Planificación para ver qué conviene hacer primero.</p>
       ) : (
         <div className="moni-advice-list">
           {items.map((item, index) => (

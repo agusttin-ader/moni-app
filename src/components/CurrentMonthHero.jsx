@@ -31,7 +31,9 @@ export function CurrentMonthHero({ state, remaining }) {
       id="resumen"
       aria-label="Resumen del mes actual"
     >
-      <p className="moni-sr-only">{view.message}</p>
+      <p className="moni-sr-only">
+        {view.message} {view.caption} {view.nextStep}
+      </p>
       <div className="moni-hero-main__inner">
         <div className="moni-hero-main__kicker-row">
           <p className="moni-hero-main__kicker">Este mes</p>
@@ -44,6 +46,8 @@ export function CurrentMonthHero({ state, remaining }) {
           {view.amountDisplay}
         </p>
         <p className="moni-hero-main__caption">{view.message}</p>
+        <p className="moni-hero-main__caption moni-hero-main__caption--interpret">{view.caption}</p>
+        <p className="moni-hero-main__next-step">{view.nextStep}</p>
         <div className="moni-hero-main__meta">
           <span className={`moni-hero-main__meta-pill moni-hero-main__meta-pill--${meta.tone}`}>
             {meta.label}

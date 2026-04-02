@@ -33,7 +33,9 @@ export function SpendingMixCard({ state }) {
     <section className="moni-card moni-spending-mix" aria-label="Distribución de gastos">
       <div className="moni-card__head">
         <h3 className="moni-card__title">Distribución de gastos</h3>
-        <p className="moni-card__sub">Visual rápido de cómo se reparte tu egreso mensual.</p>
+        <p className="moni-card__sub">
+          Fijos, variables y deudas: ver dónde se va el dinero te ayuda a decidir qué recortar.
+        </p>
       </div>
 
       {!total ? (

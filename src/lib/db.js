@@ -14,6 +14,8 @@ function emptyUserData() {
     gastosDiarios: [],
     budgets: [],
     goals: [],
+    savingsMonthlyGoal: 0,
+    savingsEntries: [],
     onboardingComplete: false,
   }
 }
@@ -98,6 +100,20 @@ function normalizeUserPayload(raw) {
         })
         .filter(Boolean)
     : []
+  const savingsMonthlyGoal = Math.max(0, Number(raw.savingsMonthlyGoal) || 0)
+  const savingsEntries = Array.isArray(raw.savingsEntries)
+    ? raw.savingsEntries
+        .map((e) => {
+          if (!e || typeof e !== 'object') return null
+          const date = String(e.date ?? '').trim().slice(0, 10)
+          return {
+            id: String(e.id ?? '').trim() || `sav_${Date.now()}`,
+            amount: Math.max(0, Number(e.amount) || 0),
+            date: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : '',
+          }
+        })
+        .filter((e) => e && e.amount > 0 && e.date)
+    : []
   let onboardingComplete = raw.onboardingComplete
   if (onboardingComplete !== true && onboardingComplete !== false) {
     onboardingComplete =
@@ -110,6 +126,8 @@ function normalizeUserPayload(raw) {
     gastosDiarios,
     budgets,
     goals,
+    savingsMonthlyGoal,
+    savingsEntries,
     onboardingComplete,
   }
 }

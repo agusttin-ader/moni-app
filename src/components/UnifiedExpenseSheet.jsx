@@ -36,12 +36,20 @@ export function UnifiedExpenseSheet({
   const [error, setError] = useState(null)
   const [editingFixedId, setEditingFixedId] = useState(null)
   const [editingDailyId, setEditingDailyId] = useState(null)
+  const [sheetTab, setSheetTab] = useState('expense')
+  const [savingsDoneMsg, setSavingsDoneMsg] = useState(null)
 
   useEffect(() => {
     if (!open) return
     queueMicrotask(() => {
       setError(null)
+      setSavingsDoneMsg(null)
       const opt = sheetOpts ?? {}
+      if (opt.preferMode === 'savings') {
+        setSheetTab('savings')
+      } else {
+        setSheetTab('expense')
+      }
       const ef = opt.editFixedId
       const ed = opt.editDailyId
       if (ef) {
@@ -56,6 +64,7 @@ export function UnifiedExpenseSheet({
           setDate(todayISODate())
           setEditingFixedId(x.id)
           setEditingDailyId(null)
+          setSheetTab('expense')
           return
         }
       }
@@ -69,6 +78,7 @@ export function UnifiedExpenseSheet({
           setDate(String(x.date ?? '').slice(0, 10) || todayISODate())
           setEditingDailyId(x.id)
           setEditingFixedId(null)
+          setSheetTab('expense')
           return
         }
       }
@@ -96,6 +106,34 @@ export function UnifiedExpenseSheet({
 
   const onSubmit = (ev) => {
     ev.preventDefault()
+    if (sheetTab === 'savings') {
+      const eA = amountFieldError(amount)
+      if (eA) {
+        setError(eA)
+        return
+      }
+      if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        setError('Elegí una fecha válida.')
+        return
+      }
+      setError(null)
+      const amt = Number(String(amount).replace(',', '.'))
+      if (!Number.isFinite(amt) || amt <= 0) {
+        setError('Ingresá un monto mayor a cero.')
+        return
+      }
+      dispatch({
+        type: 'savings/add',
+        payload: { amount: amt, date },
+      })
+      setSavingsDoneMsg('¡Listo! Sumamos esto a tu ahorro del mes.')
+      window.setTimeout(() => {
+        setSavingsDoneMsg(null)
+        onClose?.()
+      }, 1200)
+      return
+    }
+
     const eN = nameFieldError(concept)
     const eA = amountFieldError(amount)
     if (eN || eA) {
@@ -148,7 +186,8 @@ export function UnifiedExpenseSheet({
   }
 
   const editing = Boolean(editingFixedId || editingDailyId)
-  const title = 'Agregar gasto'
+  const title =
+    sheetTab === 'savings' ? 'Registrar ahorro' : 'Agregar gasto'
 
   if (!open) return null
 
@@ -177,6 +216,70 @@ export function UnifiedExpenseSheet({
 
         <form className="moni-unified-sheet__form" onSubmit={onSubmit}>
           <div className="moni-unified-sheet__content">
+            {!editing ? (
+              <section className="moni-unified-sheet__section moni-unified-sheet__section--tabs">
+                <div className="moni-segment moni-unified-sheet__segment" role="tablist" aria-label="Tipo de registro">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={sheetTab === 'expense'}
+                    className={`moni-segment__btn${sheetTab === 'expense' ? ' is-active' : ''}`}
+                    onClick={() => setSheetTab('expense')}
+                  >
+                    Gasto
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={sheetTab === 'savings'}
+                    className={`moni-segment__btn${sheetTab === 'savings' ? ' is-active' : ''}`}
+                    onClick={() => setSheetTab('savings')}
+                  >
+                    Ahorro
+                  </button>
+                </div>
+              </section>
+            ) : null}
+
+            {sheetTab === 'savings' ? (
+              <>
+                <section className="moni-unified-sheet__section moni-unified-sheet__section--amount">
+                  <label className="moni-field">
+                    <span className="moni-field__label">Monto a apartar</span>
+                    <input
+                      className="moni-input moni-unified-sheet__amount-input"
+                      inputMode="decimal"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      placeholder="0"
+                      autoFocus
+                    />
+                  </label>
+                </section>
+                <section className="moni-unified-sheet__section">
+                  <label className="moni-field">
+                    <span className="moni-field__label">Fecha</span>
+                    <input
+                      className="moni-input"
+                      type="date"
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                    />
+                  </label>
+                </section>
+                {savingsDoneMsg ? (
+                  <p className="moni-form-success" role="status">
+                    {savingsDoneMsg}
+                  </p>
+                ) : null}
+                {error && !savingsDoneMsg ? (
+                  <p className="moni-form-error" role="alert">
+                    {error}
+                  </p>
+                ) : null}
+              </>
+            ) : (
+              <>
             <section className="moni-unified-sheet__section moni-unified-sheet__section--amount">
               <label className="moni-field">
                 <span className="moni-field__label">Monto</span>
@@ -294,11 +397,17 @@ export function UnifiedExpenseSheet({
                 {error}
               </p>
             ) : null}
+              </>
+            )}
           </div>
 
           <div className="moni-unified-sheet__footer">
-            <button type="submit" className="moni-btn moni-btn--primary moni-btn--block">
-              Guardar gasto
+            <button
+              type="submit"
+              className="moni-btn moni-btn--primary moni-btn--block"
+              disabled={Boolean(savingsDoneMsg)}
+            >
+              {sheetTab === 'savings' ? 'Guardar ahorro' : 'Guardar gasto'}
             </button>
           </div>
         </form>

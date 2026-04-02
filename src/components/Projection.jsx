@@ -2,10 +2,12 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
   PROJECTION_HORIZON_MONTHS,
   activeGoalModel,
+  currentYearMonthString,
   projectionBalanceClassSuffix,
   projectionDetailRows,
   projectedVariableSourceLabel,
   projectionShortLabel,
+  savingsMonthTotal,
 } from '../lib/calculations.js'
 import { formatMoney } from '../lib/format.js'
 import { CollapsiblePanelDetail } from './CollapsiblePanelDetail.jsx'
@@ -69,6 +71,7 @@ const PROJECTION_LINE_ANIM_MS = 480
 
 export function Projection({ state }) {
   const goal = activeGoalModel(state)
+  const savingsThisMonth = savingsMonthTotal(state, currentYearMonthString())
   const rows = useMemo(
     () => projectionDetailRows(state, PROJECTION_HORIZON_MONTHS),
     [state],
@@ -167,6 +170,11 @@ export function Projection({ state }) {
         <p className="moni-card__sub">
           Saldo neto estimado por mes para ver si el rumbo actual acompaña tu objetivo principal.
         </p>
+        {savingsThisMonth > 0 ? (
+          <p className="moni-projection__savings-hint">
+            Ahorro apartado este mes: <strong>{formatMoney(savingsThisMonth)}</strong> (no modifica la curva; es seguimiento aparte).
+          </p>
+        ) : null}
       </div>
 
       {goal ? (

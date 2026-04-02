@@ -13,6 +13,7 @@ import { GoalPlannerPanel } from './GoalPlannerPanel.jsx'
 import { Header } from './Header.jsx'
 import { IncomesPanel } from './IncomesPanel.jsx'
 import { MiniMetrics } from './MiniMetrics.jsx'
+import { SavingsProgressCard } from './SavingsProgressCard.jsx'
 import { PayPriorityCard } from './PayPriorityCard.jsx'
 import { SpendingMixCard } from './SpendingMixCard.jsx'
 import { useUserProfile } from '../hooks/useUserProfile.js'
@@ -86,7 +87,7 @@ export function Dashboard({ state, dispatch, user, onLogout }) {
       type="button"
       className="moni-fab-add"
       onClick={() => openUnified({ preferMode: 'variable' })}
-      aria-label="Agregar gasto rápido"
+      aria-label="Agregar gasto o ahorro"
     >
       +
     </button>
@@ -201,6 +202,15 @@ export function Dashboard({ state, dispatch, user, onLogout }) {
                             <MiniMetrics state={state} />
                             <BudgetHealthCard state={state} />
                           </div>
+                          <div className="moni-dashboard-overview__savings">
+                            <SavingsProgressCard
+                              state={state}
+                              dispatch={dispatch}
+                              onRegisterSavings={() =>
+                                openUnified({ preferMode: 'savings' })
+                              }
+                            />
+                          </div>
                         </section>
                       </div>
                     </div>
@@ -237,8 +247,8 @@ export function Dashboard({ state, dispatch, user, onLogout }) {
                   <p className="moni-planning__intro-kicker">Tu plan en Moni</p>
                   <h2 className="moni-planning__intro-title">Planificación</h2>
                   <p className="moni-planning__intro-lead">
-                    Seguí los pasos en orden. Cuando termines, volvé a <strong>Inicio</strong> para ver el resumen
-                    sin pantallas de carga.
+                    Completá cada paso y volvé a <strong>Inicio</strong>: el resumen te dirá si el mes cierra bien
+                    y qué conviene tocar primero.
                   </p>
                 </header>
 
@@ -249,7 +259,7 @@ export function Dashboard({ state, dispatch, user, onLogout }) {
                         <p className="moni-planning__group-kicker">Paso 1 de 4</p>
                         <h3 className="moni-planning__group-title">Meta y límites por categoría</h3>
                         <p className="moni-planning__group-hint">
-                          Objetivo claro y tope mensual por rubro para que el resto del plan tenga sentido.
+                          Elegí un tope por rubro para saber cuánto podés gastar sin romper la meta.
                         </p>
                       </div>
                     </div>
@@ -269,7 +279,7 @@ export function Dashboard({ state, dispatch, user, onLogout }) {
                         <p className="moni-planning__group-kicker">Paso 2 de 4</p>
                         <h3 className="moni-planning__group-title">Ingresos del mes</h3>
                         <p className="moni-planning__group-hint">
-                          Ingreso fijo u habitual: sueldo, monotributo, alquiler cobrado, etc.
+                          Cargá lo que entra todos los meses: sin eso el margen y la proyección no son fiables.
                         </p>
                       </div>
                     </div>
@@ -290,7 +300,7 @@ export function Dashboard({ state, dispatch, user, onLogout }) {
                         <p className="moni-planning__group-kicker">Paso 3 de 4</p>
                         <h3 className="moni-planning__group-title">Gastos fijos y del día</h3>
                         <p className="moni-planning__group-hint">
-                          Primero lo que pagás todos los meses; después lo variable que vas registrando.
+                          Primero compromisos fijos, después variables: así ves dónde podés recortar si hace falta.
                         </p>
                       </div>
                     </div>
@@ -312,7 +322,7 @@ export function Dashboard({ state, dispatch, user, onLogout }) {
                         <p className="moni-planning__group-kicker">Paso 4 de 4</p>
                         <h3 className="moni-planning__group-title">Deudas y cuotas</h3>
                         <p className="moni-planning__group-hint">
-                          Cuotas y préstamos: Moni usa esto para el margen y la proyección.
+                          Las cuotas restan del margen cada mes: cargalas para priorizar pagos con criterio.
                         </p>
                       </div>
                     </div>

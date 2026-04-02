@@ -517,25 +517,25 @@ export function goalAdviceItems(state) {
 
 export function goalAdviceSummary(goal, items, formatMoneyFn) {
   if (!goal) {
-    return 'Definí una meta concreta para que MONI te ayude a priorizar y proyectar.'
+    return 'Definí una meta concreta: sin eso no hay una prioridad clara que seguir.'
   }
   const lead =
     goal.viability === 'viable'
       ? `Tu meta ${goal.title} se ve alcanzable en ${goal.monthsLeft} meses.`
       : goal.viability === 'tight'
-        ? `Tu meta ${goal.title} está cerca, pero necesita más disciplina mensual.`
+        ? `Tu meta ${goal.title} está cerca, pero necesitás más disciplina mes a mes.`
         : `Con tu escenario actual, ${goal.title} no llega cómodo al plazo que elegiste.`
   const first = items[0]
-  if (!first) return lead
+  if (!first) return `${lead} Revisá ingresos y gastos para ver qué podés ajustar.`
   switch (first.id) {
     case 'goal-gap':
-      return `${lead} Hoy necesitás liberar alrededor de ${formatMoneyFn(first.monthlyGap)} por mes para cerrar la brecha.`
+      return `${lead} Liberá unos ${formatMoneyFn(first.monthlyGap)} por mes para cerrar la brecha.`
     case 'goal-track':
-      return `${lead} Si reservás ${formatMoneyFn(first.reservePerMonth)} por mes, mantenés el plan bajo control.`
+      return `${lead} Reservá ${formatMoneyFn(first.reservePerMonth)} por mes y mantené ese ritmo.`
     case 'category-pressure':
-      return `${lead} La categoría ${first.categoryLabel} es la que más tensión le mete a tu objetivo.`
+      return `${lead} Revisá ${first.categoryLabel}: es donde más presión hay sobre la meta.`
     case 'optional-services':
-      return `${lead} Revisar servicios opcionales puede liberar hasta ${formatMoneyFn(first.optionalServicesTotal)} por mes para tu meta.`
+      return `${lead} Revisá servicios opcionales: podés liberar hasta ${formatMoneyFn(first.optionalServicesTotal)} por mes.`
     default:
       return lead
   }
@@ -543,18 +543,18 @@ export function goalAdviceSummary(goal, items, formatMoneyFn) {
 
 export function goalMotivationMessage(goal, items) {
   if (!goal) {
-    return 'Tu próxima gran decisión financiera empieza cuando definís una meta clara.'
+    return 'Elegí una meta y un plazo: a partir de ahí MONI te dice qué tocar primero.'
   }
   if (goal.viability === 'viable') {
-    return 'Tu plan ya funciona: cada peso que priorizás hoy acelera el proyecto que más te importa.'
+    return 'Seguí el plan: priorizá lo que alimenta la meta antes que gastos prescindibles.'
   }
   if (items.some((item) => item.id === 'goal-gap')) {
-    return 'Decirle que no a un gasto impulsivo hoy puede acercarte un mes entero a tu meta.'
+    return 'Evitá un gasto impulsivo hoy: ese dinero puede ir directo a cerrar la brecha.'
   }
   if (items.some((item) => item.id === 'optional-services')) {
-    return 'Recortar lo que no suma valor real es una forma concreta de invertir en tu futuro.'
+    return 'Dale una vuelta a suscripciones y servicios: ahí suele haber margen rápido.'
   }
-  return 'La constancia pesa más que la perfección: pequeñas decisiones repetidas cambian el resultado.'
+  return 'Mejor un ajuste chico todos los meses que un gran golpe al final.'
 }
 
 export function variableCategorySpendingRows(state, yearMonth = currentYearMonthString()) {
@@ -673,6 +673,51 @@ export function projectionBalanceClassSuffix(balance) {
   return balance > 0 ? 'positive' : 'negative'
 }
 
+/** Suma ahorros registrados cuyo `date` cae en el mes calendario `YYYY-MM`. */
+export function savingsMonthTotal(state, yearMonthStr) {
+  const ym = String(yearMonthStr ?? '').slice(0, 7)
+  if (!/^\d{4}-\d{2}$/.test(ym)) return 0
+  return (state?.savingsEntries ?? []).reduce((sum, e) => {
+    if (!e || String(e.date ?? '').slice(0, 7) !== ym) return sum
+    return sum + (Number(e.amount) || 0)
+  }, 0)
+}
+
+/**
+ * Meta mensual de ahorro vs. lo ya registrado en el mes actual.
+ * @returns {{ yearMonth: string, goal: number, saved: number, remaining: number, ratio: number, pct: number, hasGoal: boolean, met: boolean }}
+ */
+/** Mes calendario anterior (YYYY-MM). */
+export function previousCalendarMonthString(date = new Date()) {
+  const d = new Date(date)
+  d.setMonth(d.getMonth() - 1)
+  const y = d.getFullYear()
+  const m = d.getMonth() + 1
+  return `${y}-${String(m).padStart(2, '0')}`
+}
+
+export function savingsProgressModel(state) {
+  const ym = currentYearMonthString()
+  const prevYm = previousCalendarMonthString()
+  const goal = Math.max(0, Number(state?.savingsMonthlyGoal) || 0)
+  const saved = savingsMonthTotal(state, ym)
+  const savedPrevMonth = savingsMonthTotal(state, prevYm)
+  const remaining = goal > 0 ? Math.max(0, goal - saved) : 0
+  const ratio = goal > 0 ? Math.min(1, saved / goal) : 0
+  const pct = Math.round(ratio * 100)
+  return {
+    yearMonth: ym,
+    goal,
+    saved,
+    savedPrevMonth,
+    remaining,
+    ratio,
+    pct,
+    hasGoal: goal > 0,
+    met: goal > 0 && saved >= goal,
+  }
+}
+
 export function projectionDetailRows(state, count = PROJECTION_HORIZON_MONTHS) {
   const proj = projectMonths(state, count)
   const rows = []
@@ -732,6 +777,24 @@ export function currentMonthHeroClassSuffix(tone) {
   return tone
 }
 
+/** Qué hacer a continuación según el estado del mes (solo copy; sin datos nuevos). */
+export function currentMonthHeroNextStep(model) {
+  if (model.tone === 'positive') {
+    return 'Definí cuánto apartar este mes para que el margen no se diluya en gastos.'
+  }
+  if (model.tone === 'neutral') {
+    return 'Si el ritmo se mantiene, revisá presupuestos solo si ves desvíos.'
+  }
+  const sev = model.deficitSeverity
+  if (sev === 'mild') {
+    return 'Revisá primero gastos variables antes de tocar compromisos fijos.'
+  }
+  if (sev === 'high') {
+    return 'Necesitás recortar gastos o sumar ingresos para cerrar el mes en equilibrio.'
+  }
+  return 'El déficit es alto: priorizá lo esencial y revisá ingresos o cargas fijas.'
+}
+
 export function buildCurrentMonthHeroView(
   remaining,
   formatMoneyFn,
@@ -748,10 +811,11 @@ export function buildCurrentMonthHeroView(
     message: currentMonthHeroMessage(model, fmt),
     caption:
       model.tone === 'positive'
-        ? 'Buen margen para ahorrar o invertir.'
+        ? 'Tenés margen: es oportunidad para ahorrar o cubrir imprevistos.'
         : model.tone === 'negative'
-          ? 'Revisá gastos o ingresos para equilibrar.'
-          : 'Ingresos y egresos se compensan.',
+          ? 'El mes cierra por debajo de cero: conviene actuar antes de fin de mes.'
+          : 'Ingresos y egresos se compensan; el margen para imprevistos es limitado.',
+    nextStep: currentMonthHeroNextStep(model),
   }
 }
 
@@ -822,7 +886,12 @@ export function currentMonthHeroMeta(state, formatMoneyFn) {
   const goal = activeGoalModel(state)
   if (goal) {
     return {
-      label: goal.viability === 'viable' ? 'Meta activa' : 'Meta bajo presión',
+      label:
+        goal.viability === 'viable'
+          ? 'Meta: ritmo sostenible'
+          : goal.viability === 'tight'
+            ? 'Meta: con riesgo de desvío'
+            : 'Meta: escenario apretado',
       value: formatMoneyFn(goal.requiredPerMonth),
       tone:
         goal.viability === 'viable'
@@ -835,13 +904,18 @@ export function currentMonthHeroMeta(state, formatMoneyFn) {
   const budget = budgetOverviewModel(state)
   if (!budget.hasBudget) {
     return {
-      label: 'Variables del mes',
+      label: 'Gasto variable (mes)',
       value: formatMoneyFn(computeMonthBalance(state, 0).daily),
       tone: 'neutral',
     }
   }
   return {
-    label: 'Presupuesto flexible',
+    label:
+      budget.remaining < 0
+        ? 'Presupuesto: por encima del tope'
+        : budget.usageRatio >= 0.85
+          ? 'Presupuesto: poco margen'
+          : 'Presupuesto: con margen',
     value: formatMoneyFn(budget.remaining),
     tone:
       budget.remaining < 0
