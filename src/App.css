@@ -3850,7 +3850,7 @@ select.moni-input {
   display: flex;
   flex-direction: column;
   gap: var(--moni-space-12);
-  margin-top: var(--moni-space-12);
+  margin-top: var(--moni-space-24);
 }
 
 .moni-login-card__cta {
@@ -7288,29 +7288,102 @@ select.moni-input,
   border-color: #d7e0ea;
 }
 
-.moni-auth-shell .moni-login-card__title,
-.moni-auth-shell .moni-login-card__hint,
-.moni-auth-shell .moni-field__label {
+/* Login card on white: hierarchy + WCAG-friendly neutrals (slate ramp only) */
+.moni-auth-shell .moni-login-card__title {
   color: #0f172a;
+}
+
+.moni-auth-shell .moni-login-card__hint {
+  color: #475569;
+  margin: var(--moni-space-12) 0 var(--moni-space-24);
+}
+
+.moni-auth-shell .moni-login-card .moni-field__label {
+  color: #334155;
 }
 
 .moni-auth-shell .moni-input {
   background: #ffffff;
   color: #0f172a;
-  border-color: #cbd5e1;
-}
-
-.moni-auth-shell .moni-input::placeholder {
-  color: #94a3b8;
-}
-
-.moni-auth-shell .moni-input:hover {
   border-color: #94a3b8;
 }
 
+.moni-auth-shell .moni-input::placeholder {
+  color: #64748b;
+}
+
+.moni-auth-shell .moni-input:hover {
+  border-color: #64748b;
+}
+
 .moni-auth-shell .moni-input:focus-visible {
-  border-color: #2dd4bf;
-  box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.18);
+  border-color: #0d9488;
+  box-shadow:
+    0 0 0 1px #ffffff,
+    0 0 0 4px rgba(45, 212, 191, 0.35);
+}
+
+/* Light-surface secondary (Google): overrides dark-shell .moni-btn--secondary */
+.moni-auth-shell .moni-login-card .moni-btn--secondary {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #0f172a;
+  box-shadow: none;
+}
+
+.moni-auth-shell .moni-login-card .moni-btn--secondary:hover:not(:disabled) {
+  background: #e2e8f0;
+  border-color: #94a3b8;
+  filter: none;
+}
+
+.moni-auth-shell .moni-login-card .moni-btn--secondary:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px #ffffff,
+    0 0 0 4px rgba(13, 148, 136, 0.45);
+}
+
+.moni-auth-shell .moni-login-sep {
+  color: #64748b;
+  margin: var(--moni-space-24) 0;
+}
+
+.moni-auth-shell .moni-login-sep::before,
+.moni-auth-shell .moni-login-sep::after {
+  background: #cbd5e1;
+}
+
+.moni-auth-shell .moni-login-card .moni-login-foot-link {
+  color: #475569;
+}
+
+.moni-auth-shell .moni-login-card .moni-login-foot-link:hover:not(:disabled) {
+  color: #334155;
+}
+
+.moni-auth-shell .moni-login-card .moni-login-foot-link__em {
+  color: var(--eth-violet);
+}
+
+.moni-auth-shell .moni-form-error {
+  color: #b91c1c;
+  font-weight: 600;
+  padding: var(--moni-space-12) var(--moni-space-16);
+  border-radius: var(--eth-radius-sm);
+  background: rgba(254, 226, 226, 0.65);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+}
+
+@media (max-width: 1023px) {
+  .moni-auth-shell .moni-auth-hero__title {
+    font-size: clamp(1.42rem, 6.2vw, 1.72rem);
+  }
+
+  .moni-auth-shell .moni-auth-hero__eyebrow {
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+  }
 }
 
 .moni-login-form-shell {
