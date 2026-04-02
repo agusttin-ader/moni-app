@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { projectionBalanceClassSuffix } from '../lib/calculations.js'
 import { formatMoney } from '../lib/format.js'
+import { lockBodyScroll } from '../lib/bodyScrollLock.js'
 
 function monthLabel(ym) {
   const [y, m] = String(ym ?? '').split('-')
@@ -24,6 +25,11 @@ export function ProjectionHistoryPanel({
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [open, onClose])
+
+  useEffect(() => {
+    if (!open) return undefined
+    return lockBodyScroll()
+  }, [open])
 
   if (!open) return null
 

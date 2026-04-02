@@ -38,17 +38,34 @@
   --moni-motion-fast: 0.2s;
   --moni-motion-medium: 0.45s;
   --moni-motion-slow: 0.75s;
-  --moni-space-section: clamp(0.88rem, 3vw, 1.12rem);
-  --moni-space-panel-y: clamp(1rem, 3.5vw, 1.2rem);
-  --moni-space-field: 0.48rem;
-  --moni-space-form-stack: 0.92rem;
-  --moni-space-form-actions: 0.72rem;
+  --moni-space-8: 8px;
+  --moni-space-12: 12px;
+  --moni-space-16: 16px;
+  --moni-space-24: 24px;
+  --moni-space-32: 32px;
+  --moni-space-component: var(--moni-space-16);
+  --moni-space-small: var(--moni-space-12);
+  --moni-space-section: var(--moni-space-24);
+  --moni-space-panel-y: var(--moni-space-16);
+  --moni-space-field: var(--moni-space-12);
+  --moni-space-form-stack: var(--moni-space-16);
+  --moni-space-form-actions: var(--moni-space-8);
   --moni-type-label: 0.72rem;
   --moni-type-body: 0.9rem;
   --moni-type-panel-title: 1rem;
+  --moni-shell-max-width: 1360px;
+  --moni-shell-padding-inline: clamp(0.9rem, 4vw, 1.4rem);
+  --moni-shell-padding-bottom: clamp(1.2rem, 4vw, 2rem);
+  --moni-shell-main-top: 0.8rem;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 1023px) {
+  :root {
+    --moni-shell-max-width: 480px;
+    --moni-shell-padding-inline: 16px;
+    --moni-shell-padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+
   body {
     line-height: 1.55;
   }
@@ -64,6 +81,10 @@ html {
   background: var(--moni-page-bg);
   overflow-x: hidden;
   scroll-behavior: smooth;
+  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
+  touch-action: manipulation;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -74,16 +95,30 @@ html {
 
 body {
   margin: 0;
+  overflow-x: hidden;
+  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   line-height: 1.5;
   font-family: var(--eth-font);
   color: var(--eth-text);
   background: var(--moni-page-bg);
   -webkit-font-smoothing: antialiased;
+  touch-action: manipulation;
+}
+
+input,
+select,
+textarea {
+  font-size: 16px;
 }
 
 #root {
   min-height: 100vh;
   min-height: 100svh;
+  min-height: 100dvh;
 }
 
 a {

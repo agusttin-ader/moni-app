@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
-/** Breakpoint alineado con layout móvil de paneles laterales (~aside). */
-const QUERY = '(max-width: 720px)'
+/** Breakpoint alineado con shell no-desktop (mobile/tablet). */
+const QUERY = '(max-width: 1023px)'
 
 export function useNarrowViewport() {
   const [narrow, setNarrow] = useState(() =>

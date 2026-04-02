@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { lockBodyScroll } from '../lib/bodyScrollLock.js'
 
 function initialsFromProfile(profile, user) {
   const name =
@@ -44,6 +45,11 @@ export function ProfilePanel({
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [open, onClose])
+
+  useEffect(() => {
+    if (!open) return undefined
+    return lockBodyScroll()
+  }, [open])
 
   if (!open) return null
 

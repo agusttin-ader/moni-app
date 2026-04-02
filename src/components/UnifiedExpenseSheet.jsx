@@ -148,11 +148,7 @@ export function UnifiedExpenseSheet({
   }
 
   const editing = Boolean(editingFixedId || editingDailyId)
-  const title = editing
-    ? 'Editar gasto'
-    : mode === 'fixed'
-      ? 'Nuevo gasto fijo'
-      : 'Nuevo gasto variable'
+  const title = 'Agregar gasto'
 
   if (!open) return null
 
@@ -165,7 +161,6 @@ export function UnifiedExpenseSheet({
         onClick={onClose}
       />
       <div className="moni-unified-sheet__panel">
-        <div className="moni-unified-sheet__grab" aria-hidden />
         <div className="moni-unified-sheet__head">
           <h2 id="moni-unified-sheet-title" className="moni-unified-sheet__title">
             {title}
@@ -181,129 +176,129 @@ export function UnifiedExpenseSheet({
         </div>
 
         <form className="moni-unified-sheet__form" onSubmit={onSubmit}>
-          <label className="moni-field">
-            <span className="moni-field__label">Concepto</span>
-            <input
-              className="moni-input"
-              value={concept}
-              onChange={(e) => setConcept(e.target.value)}
-              placeholder="Ej. supermercado, Netflix, colectivo"
-              autoComplete="off"
-            />
-          </label>
-
-          <label className="moni-field">
-            <span className="moni-field__label">Monto</span>
-            <input
-              className="moni-input"
-              inputMode="decimal"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="0"
-            />
-          </label>
-
-          {!editing ? (
-            <div className="moni-segment" role="group" aria-label="Tipo de gasto">
-              <button
-                type="button"
-                className={`moni-segment__btn${mode === 'variable' ? ' is-active' : ''}`}
-                onClick={() => setMode('variable')}
-              >
-                Gasto variable
-              </button>
-              <button
-                type="button"
-                className={`moni-segment__btn${mode === 'fixed' ? ' is-active' : ''}`}
-                onClick={() => setMode('fixed')}
-              >
-                Gasto fijo
-              </button>
-            </div>
-          ) : (
-            <p className="moni-unified-sheet__mode-hint">
-              {mode === 'fixed' ? 'Gasto fijo recurrente' : 'Gasto variable por día'}
-            </p>
-          )}
-
-          {mode === 'variable' ? (
-            <label className="moni-field">
-              <span className="moni-field__label">Fecha</span>
-              <input
-                className="moni-input"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-              />
-            </label>
-          ) : (
-            <div className="moni-unified-sheet__row moni-unified-sheet__row--two">
+          <div className="moni-unified-sheet__content">
+            <section className="moni-unified-sheet__section moni-unified-sheet__section--amount">
               <label className="moni-field">
-                <span className="moni-field__label">Frecuencia</span>
-                <select
-                  className="moni-input"
-                  value={fixedFrequency}
-                  onChange={(e) => setFixedFrequency(e.target.value)}
-                >
-                  <option value="mensual">Mensual</option>
-                  <option value="bimestral">Bimestral</option>
-                  <option value="trimestral">Trimestral</option>
-                  <option value="semestral">Semestral</option>
-                  <option value="anual">Anual</option>
-                </select>
-              </label>
-              <label className="moni-field">
-                <span className="moni-field__label">Primer mes</span>
+                <span className="moni-field__label">Monto</span>
                 <input
-                  className="moni-input"
-                  type="month"
-                  value={fixedStartMonth}
-                  onChange={(e) => setFixedStartMonth(e.target.value)}
+                  className="moni-input moni-unified-sheet__amount-input"
+                  inputMode="decimal"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="0"
+                  autoFocus
                 />
               </label>
-            </div>
-          )}
+            </section>
 
-          <div className="moni-field">
-            <span className="moni-field__label">Categoría</span>
-            <div className="moni-category-grid" role="list">
-              {EXPENSE_CATEGORIES.map((c) => {
-                const active = categoryId === c.id
-                return (
-                  <button
-                    key={c.id}
-                    type="button"
-                    role="listitem"
-                    data-active={active ? 'true' : 'false'}
-                    className={`moni-category-chip${active ? ' moni-category-chip--active' : ''}`}
-                    onClick={() => setCategoryId(c.id)}
-                    aria-pressed={active}
+            <section className="moni-unified-sheet__section">
+              <label className="moni-field">
+                <span className="moni-field__label">Categoría</span>
+                <select
+                  className="moni-input"
+                  value={categoryId}
+                  onChange={(e) => setCategoryId(e.target.value)}
+                >
+                  {EXPENSE_CATEGORIES.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.emoji} {c.short}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </section>
+
+            <section className="moni-unified-sheet__section">
+              <label className="moni-field">
+                <span className="moni-field__label">Descripción</span>
+                <input
+                  className="moni-input"
+                  value={concept}
+                  onChange={(e) => setConcept(e.target.value)}
+                  placeholder="Ej. supermercado, Netflix, colectivo"
+                  autoComplete="off"
+                />
+              </label>
+            </section>
+
+            <section className="moni-unified-sheet__section">
+              {!editing ? (
+                <>
+                  <span className="moni-field__label">Tipo</span>
+                  <div className="moni-segment" role="group" aria-label="Tipo de gasto">
+                    <button
+                      type="button"
+                      className={`moni-segment__btn${mode === 'variable' ? ' is-active' : ''}`}
+                      onClick={() => setMode('variable')}
+                    >
+                      Gasto variable
+                    </button>
+                    <button
+                      type="button"
+                      className={`moni-segment__btn${mode === 'fixed' ? ' is-active' : ''}`}
+                      onClick={() => setMode('fixed')}
+                    >
+                      Gasto fijo
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <p className="moni-unified-sheet__mode-hint">
+                  {mode === 'fixed' ? 'Gasto fijo recurrente' : 'Gasto variable por día'}
+                </p>
+              )}
+            </section>
+
+            {mode === 'variable' ? (
+              <section className="moni-unified-sheet__section">
+                <label className="moni-field">
+                  <span className="moni-field__label">Fecha</span>
+                  <input
+                    className="moni-input"
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                  />
+                </label>
+              </section>
+            ) : (
+              <section className="moni-unified-sheet__section moni-unified-sheet__row moni-unified-sheet__row--two">
+                <label className="moni-field">
+                  <span className="moni-field__label">Frecuencia</span>
+                  <select
+                    className="moni-input"
+                    value={fixedFrequency}
+                    onChange={(e) => setFixedFrequency(e.target.value)}
                   >
-                    <span className="moni-category-chip__check" aria-hidden>
-                      {active ? '✓' : ''}
-                    </span>
-                    <span className="moni-category-chip__emoji" aria-hidden>
-                      {c.emoji}
-                    </span>
-                    <span className="moni-category-chip__text">{c.short}</span>
-                  </button>
-                )
-              })}
-            </div>
+                    <option value="mensual">Mensual</option>
+                    <option value="bimestral">Bimestral</option>
+                    <option value="trimestral">Trimestral</option>
+                    <option value="semestral">Semestral</option>
+                    <option value="anual">Anual</option>
+                  </select>
+                </label>
+                <label className="moni-field">
+                  <span className="moni-field__label">Primer mes</span>
+                  <input
+                    className="moni-input"
+                    type="month"
+                    value={fixedStartMonth}
+                    onChange={(e) => setFixedStartMonth(e.target.value)}
+                  />
+                </label>
+              </section>
+            )}
+
+            {error ? (
+              <p className="moni-form-error" role="alert">
+                {error}
+              </p>
+            ) : null}
           </div>
 
-          {error ? (
-            <p className="moni-form-error" role="alert">
-              {error}
-            </p>
-          ) : null}
-
-          <div className="moni-unified-sheet__actions">
+          <div className="moni-unified-sheet__footer">
             <button type="submit" className="moni-btn moni-btn--primary moni-btn--block">
-              {editing ? 'Guardar' : 'Agregar'}
-            </button>
-            <button type="button" className="moni-btn moni-btn--ghost moni-btn--block" onClick={onClose}>
-              Cancelar
+              Guardar gasto
             </button>
           </div>
         </form>

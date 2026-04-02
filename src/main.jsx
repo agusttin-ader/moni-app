@@ -4,6 +4,21 @@ import './index.css'
 import App from './App.jsx'
 import { RootErrorBoundary } from './RootErrorBoundary.jsx'
 
+if (typeof window !== 'undefined') {
+  let lastTouchEnd = 0
+  document.addEventListener(
+    'touchend',
+    (event) => {
+      const now = Date.now()
+      if (now - lastTouchEnd <= 300) {
+        event.preventDefault()
+      }
+      lastTouchEnd = now
+    },
+    { passive: false },
+  )
+}
+
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   const registerSw = () => {
     navigator.serviceWorker.register('/sw.js').catch(() => {})
