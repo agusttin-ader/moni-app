@@ -170,6 +170,17 @@ export function totalDailyExpensesForMonthKey(gastosDiarios, yearMonth) {
   }, 0)
 }
 
+/** Ingresos variables registrados por fecha (mes calendario YYYY-MM). */
+export function totalVariableIncomeForMonthKey(ingresosDiarios, yearMonth) {
+  if (!yearMonth) return 0
+  return (ingresosDiarios ?? []).reduce((sum, g) => {
+    if (!g || typeof g !== 'object') return sum
+    const d = String(g.date ?? '').slice(0, 7)
+    if (d !== yearMonth) return sum
+    return sum + Math.max(0, Number(g.amount) || 0)
+  }, 0)
+}
+
 export function totalBudgetLimit(budgets) {
   return (budgets ?? []).reduce(
     (sum, item) => sum + Math.max(0, Number(item?.monthlyLimit) || 0),
@@ -177,7 +188,7 @@ export function totalBudgetLimit(budgets) {
   )
 }
 
-function variableSpendByCategoryForMonthKey(gastosDiarios, yearMonth) {
+export function variableSpendByCategoryForMonthKey(gastosDiarios, yearMonth) {
   const out = new Map()
   for (const item of gastosDiarios ?? []) {
     if (!item || typeof item !== 'object') continue
@@ -336,7 +347,8 @@ export function activeGoalModel(state) {
   if (!active) return null
   const monthsLeft = goalMonthsUntil(active.targetMonth)
   const targetAmount = Math.max(0, Number(active.targetAmount) || 0)
-  const savedAmount = Math.max(0, Number(active.savedAmount) || 0)
+  /** Progreso de meta = suma de ahorros registrados (única fuente de verdad). */
+  const savedAmount = totalSavingsEntriesAmount(state)
   const remainingNeeded = Math.max(0, targetAmount - savedAmount)
   let projectedContribution = 0
   const balanceSeries = []
@@ -373,6 +385,39 @@ export function activeGoalModel(state) {
     viability,
     balanceSeries,
   }
+}
+
+/**
+ * Vista previa al cargar un gasto variable: margen después y estimación de impacto en la meta.
+ * @returns {null | { marginAfter: number, goalLine: string | null, tone: 'ok' | 'warn' | 'danger' }}
+ */
+export function previewDailyExpenseGoalImpact(state, amountRaw) {
+  const amount = Math.max(0, Number(String(amountRaw ?? '').replace(',', '.')) || 0)
+  if (amount <= 0) return null
+  const b = computeMonthBalance(state, 0)
+  const marginAfter = b.remaining - amount
+  const goal = activeGoalModel(state)
+  let goalLine = null
+  let tone = 'ok'
+  if (goal && goal.targetAmount > 0 && goal.requiredPerMonth > 0.01) {
+    const days = Math.max(1, Math.round((amount / goal.requiredPerMonth) * 30))
+    if (amount >= goal.requiredPerMonth * 0.03) {
+      goalLine = `~${days} días más hacia la meta`
+    }
+  } else if (goal && goal.targetAmount > 0) {
+    goalLine = 'Afecta tu margen mensual'
+  }
+  if (marginAfter < 0) tone = 'danger'
+  else if (marginAfter < Math.max(b.incomes * 0.06, 1)) tone = 'warn'
+  return { marginAfter, goalLine, tone, amount }
+}
+
+/** Meta activa: ahorrado = sum(savings). Otras metas: solo campo guardado (legacy). */
+export function effectiveGoalSavedAmount(state, goal) {
+  if (!goal?.id) return 0
+  const ag = activeGoalModel(state)
+  if (ag && ag.id === goal.id) return ag.savedAmount
+  return Math.max(0, Number(goal.savedAmount) || 0)
 }
 
 export function goalCategoryLabel(category) {
@@ -590,16 +635,35 @@ export function variableCategorySpendingRows(state, yearMonth = currentYearMonth
 export function computeMonthBalance(state, monthOffset) {
   const base = yearMonthToIndex(currentYearMonthString())
   if (base == null) {
-    return { incomes: 0, fixed: 0, debts: 0, daily: 0, remaining: 0 }
+    return {
+      incomes: 0,
+      variableIncome: 0,
+      fixed: 0,
+      debts: 0,
+      daily: 0,
+      remaining: 0,
+    }
   }
   const targetIdx = base + monthOffset
+  const ym = monthKeyForOffset(monthOffset)
   const incomes = totalMonthlyIncome(state?.ingresos, targetIdx)
+  const variableIncome = ym
+    ? totalVariableIncomeForMonthKey(state?.ingresosDiarios, ym)
+    : 0
   const fixed = totalFixedExpensesForMonth(state?.gastos, targetIdx)
   const debts = totalDebtPaymentsForMonth(state?.deudas, monthOffset)
   const variable = projectedVariableExpensesInfo(state, monthOffset)
   const daily = variable.amount
-  const remaining = incomes - fixed - debts - daily
-  return { incomes, fixed, debts, daily, dailySource: variable.source, remaining }
+  const remaining = incomes + variableIncome - fixed - debts - daily
+  return {
+    incomes,
+    variableIncome,
+    fixed,
+    debts,
+    daily,
+    dailySource: variable.source,
+    remaining,
+  }
 }
 
 function clamp01(value) {
@@ -681,6 +745,14 @@ export function savingsMonthTotal(state, yearMonthStr) {
     if (!e || String(e.date ?? '').slice(0, 7) !== ym) return sum
     return sum + (Number(e.amount) || 0)
   }, 0)
+}
+
+/** Suma todos los montos en `savingsEntries` (ahorros registrados desde la app). */
+export function totalSavingsEntriesAmount(state) {
+  return (state?.savingsEntries ?? []).reduce(
+    (sum, e) => sum + (Number(e?.amount) || 0),
+    0,
+  )
 }
 
 /**

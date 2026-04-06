@@ -65,10 +65,24 @@
     --moni-shell-max-width: 480px;
     --moni-shell-padding-inline: 16px;
     --moni-shell-padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    /* Superficies elevadas (cards, hero): sombra suave tipo sistema */
+    --moni-native-elev-1:
+      0 1px 2px rgba(15, 23, 42, 0.05), 0 4px 16px rgba(15, 23, 42, 0.07);
+    --moni-native-elev-sheet: 0 -8px 32px rgba(15, 23, 42, 0.12);
   }
 
   body {
     line-height: 1.55;
+    /* Tipografía de sistema en móvil: sensación más “app nativa” que web con Inter */
+    font-family:
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      Roboto,
+      'Helvetica Neue',
+      Arial,
+      sans-serif;
+    -webkit-tap-highlight-color: rgba(49, 160, 150, 0.14);
   }
 }
 

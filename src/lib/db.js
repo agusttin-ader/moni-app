@@ -12,6 +12,7 @@ function emptyUserData() {
     gastos: [],
     deudas: [],
     gastosDiarios: [],
+    ingresosDiarios: [],
     budgets: [],
     goals: [],
     savingsMonthlyGoal: 0,
@@ -67,6 +68,21 @@ function normalizeUserPayload(raw) {
   const gastosDiarios = Array.isArray(raw.gastosDiarios)
     ? raw.gastosDiarios
     : []
+  const ingresosDiarios = Array.isArray(raw.ingresosDiarios)
+    ? raw.ingresosDiarios
+        .map((e) => {
+          if (!e || typeof e !== 'object') return null
+          const date = String(e.date ?? '').trim().slice(0, 10)
+          return {
+            id: String(e.id ?? '').trim() || `incv_${Date.now()}`,
+            amount: Math.max(0, Number(e.amount) || 0),
+            categoryId: String(e.categoryId ?? 'varios'),
+            date: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : '',
+            note: e.note != null ? String(e.note).trim() : '',
+          }
+        })
+        .filter((e) => e && e.amount > 0 && e.date)
+    : []
   const budgets = Array.isArray(raw.budgets)
     ? raw.budgets
         .map((b) => {
@@ -110,6 +126,7 @@ function normalizeUserPayload(raw) {
             id: String(e.id ?? '').trim() || `sav_${Date.now()}`,
             amount: Math.max(0, Number(e.amount) || 0),
             date: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : '',
+            note: e.note != null ? String(e.note).trim() : '',
           }
         })
         .filter((e) => e && e.amount > 0 && e.date)
@@ -117,13 +134,19 @@ function normalizeUserPayload(raw) {
   let onboardingComplete = raw.onboardingComplete
   if (onboardingComplete !== true && onboardingComplete !== false) {
     onboardingComplete =
-      ingresos.length + gastos.length + deudas.length + gastosDiarios.length > 0
+      ingresos.length +
+        gastos.length +
+        deudas.length +
+        gastosDiarios.length +
+        ingresosDiarios.length >
+      0
   }
   return {
     ingresos,
     gastos,
     deudas,
     gastosDiarios,
+    ingresosDiarios,
     budgets,
     goals,
     savingsMonthlyGoal,

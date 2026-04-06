@@ -33,6 +33,7 @@ export function Header({
   activeView = 'home',
   onChangeView,
   onQuickAdd,
+  mobileLayout = false,
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const isLoggedIn = Boolean(user)
@@ -94,6 +95,21 @@ export function Header({
     onChangeView?.('planning')
   }
 
+  const goAdd = () => {
+    setMenuOpen(false)
+    onChangeView?.('add')
+  }
+
+  const goMovements = () => {
+    setMenuOpen(false)
+    onChangeView?.('movements')
+  }
+
+  const goDetails = () => {
+    setMenuOpen(false)
+    onChangeView?.('details')
+  }
+
   const menuPortal = createPortal(
     <div
       className={`moni-topnav__menu-layer${menuOpen ? ' is-open active' : ''}`}
@@ -130,6 +146,35 @@ export function Header({
               </span>
               <span className="moni-topnav__drawer-link-label">Inicio</span>
             </button>
+            {mobileLayout ? (
+              <>
+                <button
+                  type="button"
+                  className={`moni-topnav__drawer-link moni-topnav__drawer-link--nav${activeView === 'add' ? ' is-active' : ''}`}
+                  onClick={goAdd}
+                >
+                  <span className="moni-topnav__drawer-icon" aria-hidden>
+                    <svg viewBox="0 0 24 24" width="22" height="22" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="9" />
+                      <path d="M12 8v8M8 12h8" />
+                    </svg>
+                  </span>
+                  <span className="moni-topnav__drawer-link-label">Agregar</span>
+                </button>
+                <button
+                  type="button"
+                  className={`moni-topnav__drawer-link moni-topnav__drawer-link--nav${activeView === 'movements' ? ' is-active' : ''}`}
+                  onClick={goMovements}
+                >
+                  <span className="moni-topnav__drawer-icon" aria-hidden>
+                    <svg viewBox="0 0 24 24" width="22" height="22" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M4 6h16M4 12h16M4 18h10" />
+                    </svg>
+                  </span>
+                  <span className="moni-topnav__drawer-link-label">Movimientos</span>
+                </button>
+              </>
+            ) : null}
             <button
               type="button"
               className={`moni-topnav__drawer-link moni-topnav__drawer-link--nav${activeView === 'planning' ? ' is-active' : ''}`}
@@ -144,8 +189,25 @@ export function Header({
                   <rect x="8" y="11" width="4" height="8" rx="1" />
                 </svg>
               </span>
-              <span className="moni-topnav__drawer-link-label">Planificación</span>
+              <span className="moni-topnav__drawer-link-label">
+                {mobileLayout ? 'Plan' : 'Planificación'}
+              </span>
             </button>
+            {mobileLayout ? (
+              <button
+                type="button"
+                className={`moni-topnav__drawer-link moni-topnav__drawer-link--nav${activeView === 'details' ? ' is-active' : ''}`}
+                onClick={goDetails}
+              >
+                <span className="moni-topnav__drawer-icon" aria-hidden>
+                  <svg viewBox="0 0 24 24" width="22" height="22" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 19.5V5" />
+                    <path d="M4 15h4l3-8 4 12 3-6h4" />
+                  </svg>
+                </span>
+                <span className="moni-topnav__drawer-link-label">Detalles</span>
+              </button>
+            ) : null}
           </nav>
 
           <div className="moni-topnav__drawer-divider" aria-hidden />
@@ -242,7 +304,9 @@ export function Header({
           <div className="moni-topnav__actions" />
         </div>
 
-        <div className="moni-topnav__hub">
+        <div
+          className={`moni-topnav__hub${activeView === 'add' && mobileLayout ? ' moni-topnav__hub--hidden' : ''}`}
+        >
           <div className="moni-topnav__hub-welcome">
             <p className="moni-topnav__hub-greeting">
               Hola, <strong>{greetingName}</strong>
@@ -254,8 +318,8 @@ export function Header({
               <button
                 type="button"
                 className="moni-topnav__quick-add"
-                onClick={() => onQuickAdd?.({ preferMode: 'variable' })}
-                aria-label="Carga rápida de gasto"
+                onClick={() => onQuickAdd?.()}
+                aria-label="Agregar"
               >
                 <span className="moni-topnav__quick-add-plus" aria-hidden>
                   +

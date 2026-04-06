@@ -8,7 +8,9 @@ import { useAnimatedNumber } from '../hooks/useAnimatedNumber.js'
 
 export function RemainingSummary({ state }) {
   const b = currentMonthBreakdown(state)
-  const i = useAnimatedNumber(b.incomes)
+  const remainingIsDeficit = b.remaining < 0
+  const totalInflow = b.incomes + (b.variableIncome ?? 0)
+  const i = useAnimatedNumber(totalInflow)
   const f = useAnimatedNumber(b.fixed)
   const d = useAnimatedNumber(b.debts)
   const v = useAnimatedNumber(b.daily)
@@ -42,7 +44,13 @@ export function RemainingSummary({ state }) {
         </li>
         <li className="moni-kv__total">
           <span>Restante</span>
-          <strong>{formatMoney(r)}</strong>
+          <strong
+            className={
+              remainingIsDeficit ? 'moni-kv__remaining--deficit' : 'moni-kv__remaining--surplus'
+            }
+          >
+            {formatMoney(r)}
+          </strong>
         </li>
       </ul>
     </section>

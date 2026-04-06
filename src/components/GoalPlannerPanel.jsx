@@ -1,7 +1,11 @@
 import { useMemo, useState } from 'react'
-import { activeGoalModel, goalCategoryLabel } from '../lib/calculations.js'
+import {
+  activeGoalModel,
+  effectiveGoalSavedAmount,
+  goalCategoryLabel,
+} from '../lib/calculations.js'
 import { amountFieldError, nameFieldError } from '../lib/formValidation.js'
-import { formatMoney, formatYearMonth } from '../lib/format.js'
+import { formatISODateShort, formatMoney, formatYearMonth } from '../lib/format.js'
 
 const GOAL_CATEGORIES = [
   { id: 'relocation', label: 'Mudanza / nuevo comienzo' },
@@ -12,9 +16,16 @@ const GOAL_CATEGORIES = [
   { id: 'other', label: 'Otra meta' },
 ]
 
-export function GoalPlannerPanel({ state, dispatch }) {
+export function GoalPlannerPanel({ state, dispatch, onRegisterSavings }) {
   const goals = useMemo(() => state.goals ?? [], [state.goals])
   const activeGoal = activeGoalModel(state)
+  const savingsSorted = useMemo(
+    () =>
+      [...(state.savingsEntries ?? [])].sort((a, b) =>
+        String(b.date).localeCompare(String(a.date)),
+      ),
+    [state.savingsEntries],
+  )
   const [editingId, setEditingId] = useState(null)
   const [title, setTitle] = useState('')
   const [targetAmount, setTargetAmount] = useState('')
@@ -23,6 +34,10 @@ export function GoalPlannerPanel({ state, dispatch }) {
   const [priority, setPriority] = useState('medium')
   const [category, setCategory] = useState('relocation')
   const [error, setError] = useState(null)
+  const [savingsEditId, setSavingsEditId] = useState(null)
+  const [savingsEditAmount, setSavingsEditAmount] = useState('')
+  const [savingsEditDate, setSavingsEditDate] = useState('')
+  const [savingsLedgerError, setSavingsLedgerError] = useState(null)
 
   const reset = () => {
     setEditingId(null)
@@ -105,7 +120,7 @@ export function GoalPlannerPanel({ state, dispatch }) {
             />
           </label>
           <label className="moni-field">
-            <span className="moni-field__label">Ya ahorrado</span>
+            <span className="moni-field__label">Base inicial</span>
             <input
               className="moni-input"
               inputMode="decimal"
@@ -113,6 +128,7 @@ export function GoalPlannerPanel({ state, dispatch }) {
               onChange={(event) => setSavedAmount(event.target.value)}
               placeholder="0"
             />
+            <span className="moni-field__hint">Opcional. La barra de meta usa solo ahorros registrados.</span>
           </label>
         </div>
 
@@ -173,6 +189,169 @@ export function GoalPlannerPanel({ state, dispatch }) {
         </div>
       </form>
 
+      <div className="moni-savings-ledger">
+        <div className="moni-savings-ledger__head">
+          <h4 className="moni-savings-ledger__title">Ahorros registrados</h4>
+          {onRegisterSavings ? (
+            <button
+              type="button"
+              className="moni-btn moni-btn--secondary moni-btn--sm"
+              onClick={() => onRegisterSavings()}
+            >
+              + Registrar ahorro
+            </button>
+          ) : null}
+        </div>
+        <p className="moni-savings-ledger__sub">
+          Cada movimiento suma al total ahorrado de tu <strong>meta activa</strong> y actualiza la barra de
+          progreso en Inicio.
+        </p>
+        {!savingsSorted.length ? (
+          <p className="moni-empty moni-savings-ledger__empty">Todavía no registraste ahorros desde Moni.</p>
+        ) : (
+          <ul className="moni-savings-ledger__list">
+            {savingsSorted.map((entry) => {
+              const isEditing = savingsEditId === entry.id
+              return (
+                <li key={entry.id} className="moni-savings-ledger__item">
+                  {isEditing ? (
+                    <div className="moni-savings-ledger__edit">
+                      <div className="moni-form-row moni-form-row--split">
+                        <label className="moni-field">
+                          <span className="moni-field__label">Monto</span>
+                          <input
+                            className="moni-input"
+                            inputMode="decimal"
+                            value={savingsEditAmount}
+                            onChange={(e) => setSavingsEditAmount(e.target.value)}
+                          />
+                        </label>
+                        <label className="moni-field">
+                          <span className="moni-field__label">Fecha</span>
+                          <input
+                            type="date"
+                            className="moni-input"
+                            value={savingsEditDate}
+                            onChange={(e) => setSavingsEditDate(e.target.value)}
+                          />
+                        </label>
+                      </div>
+                      {savingsLedgerError ? (
+                        <p className="moni-form-error" role="alert">
+                          {savingsLedgerError}
+                        </p>
+                      ) : null}
+                      <div className="moni-savings-ledger__edit-actions">
+                        <button
+                          type="button"
+                          className="moni-btn moni-btn--primary moni-btn--sm"
+                          onClick={() => {
+                            const err = amountFieldError(savingsEditAmount)
+                            if (err) {
+                              setSavingsLedgerError(err)
+                              return
+                            }
+                            const d = String(savingsEditDate).slice(0, 10)
+                            if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+                              setSavingsLedgerError('Elegí una fecha válida.')
+                              return
+                            }
+                            const amt = Number(String(savingsEditAmount).replace(',', '.'))
+                            if (!Number.isFinite(amt) || amt <= 0) {
+                              setSavingsLedgerError('Ingresá un monto mayor a cero.')
+                              return
+                            }
+                            setSavingsLedgerError(null)
+                            dispatch({
+                              type: 'savings/update',
+                              payload: { id: entry.id, amount: amt, date: d },
+                            })
+                            setSavingsEditId(null)
+                          }}
+                        >
+                          Guardar
+                        </button>
+                        <button
+                          type="button"
+                          className="moni-btn moni-btn--ghost moni-btn--sm"
+                          onClick={() => {
+                            setSavingsEditId(null)
+                            setSavingsLedgerError(null)
+                          }}
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="moni-savings-ledger__main">
+                        <span className="moni-savings-ledger__amount">{formatMoney(entry.amount)}</span>
+                        <span className="moni-savings-ledger__date">{formatISODateShort(entry.date)}</span>
+                      </div>
+                      <div className="moni-savings-ledger__actions">
+                        <button
+                          type="button"
+                          className="moni-action-btn"
+                          onClick={() => {
+                            setSavingsEditId(entry.id)
+                            setSavingsEditAmount(String(entry.amount))
+                            setSavingsEditDate(String(entry.date ?? '').slice(0, 10))
+                            setSavingsLedgerError(null)
+                          }}
+                          aria-label="Editar ahorro"
+                        >
+                          <svg viewBox="0 0 24 24" aria-hidden>
+                            <path
+                              d="M4 16.5V20h3.5L19 8.5l-3.5-3.5L4 16.5z"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.6"
+                              strokeLinejoin="round"
+                            />
+                            <path
+                              d="M14.5 5l3.5 3.5"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.6"
+                              strokeLinecap="round"
+                            />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          className="moni-action-btn moni-action-btn--danger"
+                          onClick={() => {
+                            if (
+                              typeof window !== 'undefined' &&
+                              !window.confirm('¿Eliminar este registro de ahorro?')
+                            ) {
+                              return
+                            }
+                            dispatch({ type: 'savings/delete', payload: { id: entry.id } })
+                          }}
+                          aria-label="Eliminar ahorro"
+                        >
+                          <svg viewBox="0 0 24 24" aria-hidden>
+                            <path
+                              d="M6 6l12 12M18 6l-12 12"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.8"
+                              strokeLinecap="round"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </div>
+
       {activeGoal ? (
         <p className="moni-hint">
           Activa ahora: <strong>{activeGoal.title}</strong> para {formatYearMonth(activeGoal.targetMonth)}.
@@ -190,7 +369,7 @@ export function GoalPlannerPanel({ state, dispatch }) {
               <div className="moni-goal-list__body">
                 <div className="moni-goal-list__name">{goal.title}</div>
                 <div className="moni-goal-list__meta">
-                  {goalCategoryLabel(goal.category)} · {formatMoney(goal.savedAmount ?? 0)} de{' '}
+                  {goalCategoryLabel(goal.category)} · {formatMoney(effectiveGoalSavedAmount(state, goal))} de{' '}
                   {formatMoney(goal.targetAmount)} · {formatYearMonth(goal.targetMonth)}
                 </div>
               </div>

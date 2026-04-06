@@ -9,7 +9,7 @@ import {
   projectionShortLabel,
   savingsMonthTotal,
 } from '../lib/calculations.js'
-import { formatMoney } from '../lib/format.js'
+import { formatMoney, formatMoneyCompact } from '../lib/format.js'
 import { CollapsiblePanelDetail } from './CollapsiblePanelDetail.jsx'
 
 /**
@@ -237,8 +237,9 @@ export function Projection({ state }) {
               </span>
               <span
                 className={`moni-projection-chart__key-val moni-projection-chart__key-val--${projectionBalanceClassSuffix(row.balance)}`}
+                title={formatMoney(row.balance)}
               >
-                {formatMoney(row.balance)}
+                {formatMoneyCompact(row.balance)}
               </span>
             </li>
           ))}

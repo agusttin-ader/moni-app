@@ -10,7 +10,8 @@ function deriveOnboardingComplete(payload) {
     (payload?.ingresos?.length ?? 0) +
     (payload?.gastos?.length ?? 0) +
     (payload?.deudas?.length ?? 0) +
-    (payload?.gastosDiarios?.length ?? 0)
+    (payload?.gastosDiarios?.length ?? 0) +
+    (payload?.ingresosDiarios?.length ?? 0)
   return n > 0
 }
 
@@ -20,6 +21,7 @@ export function createInitialState() {
     gastos: [],
     deudas: [],
     gastosDiarios: [],
+    ingresosDiarios: [],
     budgets: [],
     goals: [],
     savingsMonthlyGoal: 0,
@@ -46,6 +48,9 @@ export function moniReducer(state, action) {
         gastosDiarios: Array.isArray(p?.gastosDiarios)
           ? p.gastosDiarios
           : base.gastosDiarios,
+        ingresosDiarios: Array.isArray(p?.ingresosDiarios)
+          ? p.ingresosDiarios
+          : base.ingresosDiarios,
         budgets: Array.isArray(p?.budgets) ? p.budgets : base.budgets,
         goals: Array.isArray(p?.goals) ? p.goals : base.goals,
         savingsMonthlyGoal: Math.max(
@@ -248,6 +253,42 @@ export function moniReducer(state, action) {
         ),
       }
 
+    case 'variableIncome/add': {
+      const { amount, categoryId, date, note } = action.payload
+      const item = {
+        id: genId(),
+        amount: Number(amount) || 0,
+        categoryId: String(categoryId ?? 'varios'),
+        date: String(date ?? '').slice(0, 10),
+        note: note != null ? String(note).trim() : '',
+      }
+      return { ...state, ingresosDiarios: [...state.ingresosDiarios, item] }
+    }
+    case 'variableIncome/update': {
+      const { id, amount, categoryId, date, note } = action.payload
+      return {
+        ...state,
+        ingresosDiarios: state.ingresosDiarios.map((x) =>
+          x.id === id
+            ? {
+                ...x,
+                amount: Number(amount) || 0,
+                categoryId: String(categoryId ?? 'varios'),
+                date: String(date ?? '').slice(0, 10),
+                note: note != null ? String(note).trim() : '',
+              }
+            : x,
+        ),
+      }
+    }
+    case 'variableIncome/delete':
+      return {
+        ...state,
+        ingresosDiarios: state.ingresosDiarios.filter(
+          (x) => x.id !== action.payload.id,
+        ),
+      }
+
     case 'budget/save': {
       const id = String(action.payload?.id ?? '').trim()
       const categoryId = String(action.payload?.categoryId ?? 'other')
@@ -345,10 +386,49 @@ export function moniReducer(state, action) {
         id: genId(),
         amount,
         date,
+        note:
+          action.payload?.note != null ? String(action.payload.note).trim() : '',
       }
       return {
         ...state,
         savingsEntries: [...(state.savingsEntries ?? []), item],
+      }
+    }
+
+    case 'savings/update': {
+      const id = String(action.payload?.id ?? '').trim()
+      if (!id) return state
+      const list = state.savingsEntries ?? []
+      const idx = list.findIndex((e) => e?.id === id)
+      if (idx < 0) return state
+      const cur = list[idx]
+      const nextAmount =
+        action.payload?.amount != null
+          ? Math.max(0, Number(action.payload.amount) || 0)
+          : Number(cur.amount) || 0
+      let nextDate = cur.date
+      if (action.payload?.date != null) {
+        const d = String(action.payload.date).trim().slice(0, 10)
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return state
+        nextDate = d
+      }
+      if (nextAmount <= 0) return state
+      let nextNote = cur.note ?? ''
+      if (action.payload?.note != null) {
+        nextNote = String(action.payload.note).trim()
+      }
+      const next = { ...cur, amount: nextAmount, date: nextDate, note: nextNote }
+      const savingsEntries = [...list]
+      savingsEntries[idx] = next
+      return { ...state, savingsEntries }
+    }
+
+    case 'savings/delete': {
+      const id = String(action.payload?.id ?? '').trim()
+      if (!id) return state
+      return {
+        ...state,
+        savingsEntries: (state.savingsEntries ?? []).filter((e) => e?.id !== id),
       }
     }
 

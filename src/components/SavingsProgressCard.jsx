@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { savingsProgressModel } from '../lib/calculations.js'
 import { formatMoney } from '../lib/format.js'
 import { useAnimatedNumber } from '../hooks/useAnimatedNumber.js'
@@ -6,16 +6,8 @@ import { useAnimatedNumber } from '../hooks/useAnimatedNumber.js'
 export function SavingsProgressCard({ state, dispatch, onRegisterSavings }) {
   const model = savingsProgressModel(state)
   const savedA = useAnimatedNumber(model.saved)
-  const [goalDraft, setGoalDraft] = useState(() =>
-    model.goal > 0 ? String(model.goal) : '',
-  )
+  const [goalDraft, setGoalDraft] = useState('')
   const [goalEditing, setGoalEditing] = useState(false)
-
-  useEffect(() => {
-    if (!goalEditing) {
-      setGoalDraft(model.goal > 0 ? String(model.goal) : '')
-    }
-  }, [model.goal, goalEditing])
 
   const persistGoal = useCallback(() => {
     const n = Number(String(goalDraft).replace(',', '.')) || 0
